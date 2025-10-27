@@ -1,0 +1,82 @@
+/* фон страницы + отступ под фиксированный navbar */
+.detail-page-shell {
+  min-height:100vh;
+  background:var(--bg);
+  padding-top:56px;
+  color:var(--text);
+  display:block;
+}
+
+.detail-page-shell--center {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* блок с хлебными крошками над заголовком */
+.detail-breadcrumbs-wrapper {
+  margin-bottom:12px;
+}
+
+/* грид из text.css */
+.detail-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:24px;
+  align-items:start;
+  margin-bottom:24px;
+}
+
+/* card из text.css */
+.card {
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+  align-items:center;
+}
+
+.detail-card img {
+  display:block;
+  width:100%;
+  height:360px; 
+  object-fit:cover;
+  border-radius:var(--radius);
+}
+
+/* описание */
+.desc {
+  padding:22px;
+  margin-top:20px;
+  font-size:22px;
+  line-height:1.4;
+  color:#222;
+  white-space:pre-line;
+}
+
+.muted {
+  background:#fff;
+  border-color:#DDE3EA;
+}
+
+/* кнопка под контентом */
+.detail-actions {
+  margin-top:24px;
+}
+
+/* доп вспомогательное */
+.not-found-block {
+  text-align:center;
+  padding-top:40px;
+}
+
+/* адаптив, на мобилке 1 колонка */
+@media (max-width:768px) {
+  .detail-grid {
+    grid-template-columns:1fr;
+  }
+
+  .page-title {
+    font-size:32px;
+  }
+}

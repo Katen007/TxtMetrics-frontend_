@@ -1,0 +1,27 @@
+.home-shell {
+  background:var(--bg);
+  min-height:100vh;
+  padding-top:56px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  color:var(--text);
+}
+
+.home-inner {
+  max-width:700px;
+  margin-top:40px;
+  padding:0 16px;
+  text-align:center;
+}
+
+.home-title-fix {
+  margin-top:0;
+}
+
+.home-lead {
+  font-size:22px;
+  line-height:1.4;
+  color:#444;
+  margin:0 auto;
+}
