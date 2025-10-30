@@ -21,7 +21,6 @@ export const CustomBreadcrumbs: React.FC<BreadcrumbsProps> = ({ crumbs }) => {
               {crumb.label}
             </Link>
           )}
-
           {index < allCrumbs.length - 1 && (
             <span className="breadcrumbs__sep">›</span>
           )}

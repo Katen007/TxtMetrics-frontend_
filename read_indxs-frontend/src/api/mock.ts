@@ -1,4 +1,4 @@
-import type {IPaginatedTexts} from "../types/index.ts";
+import type {CartIcon, IPaginatedTexts} from "../types/index.ts";
 
 export const TEXTS_MOCK: IPaginatedTexts = {
   total: 3,
@@ -30,4 +30,10 @@ SMOG). Отчёт покажет, насколько материал удобе
       status: false,
     },
   ],
+};
+
+
+export const CART_MOCK: CartIcon ={
+  draft_readIndxs_id: -1,
+  texts_count: 0
 };

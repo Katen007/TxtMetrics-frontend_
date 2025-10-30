@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Container, Spinner, Form, Badge, Image } from 'react-bootstrap';
 import { TextCard } from '../components/TextCard';
-import { getTexts } from '../api/textApi';
-import type { IText } from '../types';
+import { getTexts, getCardInfo } from '../api/textApi';
+import { type CartIcon, type IText } from '../types';
 import './styles/TextsListPage.css';
 
 export const TextsListPage = () => {
     const [texts, setTexts] = useState<IText[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [cartCount, setCartCount] = useState(1);
+    const [cartData, setCartData] = useState<CartIcon>();
 
     const fetchTexts = (filterTitle: string) => {
         setLoading(true);
@@ -24,9 +24,15 @@ export const TextsListPage = () => {
             })
             .finally(() => setLoading(false));
     };
+    const fetchCard = ()=>{
+        getCardInfo().then(data => {
+            setCartData(data);
+        })
+    }
 
     useEffect(() => {
         fetchTexts('');
+        fetchCard()
     }, []);
 
     const handleSearchSubmit = (event: React.FormEvent) => {
@@ -67,15 +73,16 @@ export const TextsListPage = () => {
             {/* плавающая корзина */}
             <div className="readIndxs" title="Текущая заявка">
                 <Image
-                    src="http://localhost:9000/texts/Images/cart.png"
+                    src="http://localhost:9000/img/img/cart2.svg"
                     className="readIndxs__icon"
                     width={24}
                     height={24}
                     alt="Корзина"
                 />
-                {cartCount > 0 && (
-                    <Badge className="readIndxs__badge">{cartCount}</Badge>
-                )}
+                {(cartData?.texts_count && cartData.texts_count > 0) ? (
+                    <Badge className="readIndxs__badge">{cartData.texts_count}</Badge>
+                ):
+                <></>}
             </div>
         </div>
     );

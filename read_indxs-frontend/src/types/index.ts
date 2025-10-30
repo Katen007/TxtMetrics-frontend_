@@ -17,3 +17,8 @@ export interface ICrumb {
   path?: string;
   active?: boolean;
 }
+
+export interface CartIcon{
+  draft_readIndxs_id?: number;
+  texts_count: number;
+}

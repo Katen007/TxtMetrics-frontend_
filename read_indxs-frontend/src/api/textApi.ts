@@ -1,5 +1,5 @@
-import type { IPaginatedTexts, IText } from '../types';
-import { TEXTS_MOCK } from './mock';
+import type { CartIcon, IPaginatedTexts, IText } from '../types';
+import { TEXTS_MOCK, CART_MOCK } from './mock';
 
 const API_PREFIX = 'http://localhost:8080/api';
 
@@ -42,3 +42,16 @@ export const getTextById = async (id: string): Promise<IText | null> => {
         return text || null;
     }
 };
+
+export const getCardInfo = async (): Promise<CartIcon> => {
+    try{
+        const response = await fetch(`${API_PREFIX}/readindxs/my-text-cart`);
+        if (!response.ok) {
+            throw new Error('Backend is not available');
+        }
+        return await response.json();
+    }catch{
+        console.warn(`Failed to fetch card data, using mock data.`);
+        return CART_MOCK || null;
+    }
+}
