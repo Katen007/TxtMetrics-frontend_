@@ -1,7 +1,7 @@
 export interface IText {
   id: number;
   title: string;
-  imageUrl?: string;
+  image_url?: string;
   description?: string;
   price: number;
   status?: boolean;

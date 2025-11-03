@@ -3,14 +3,14 @@ import { Link } from 'react-router-dom';
 import type { IText } from '../types';
 import './styles/TextCard.css';
 
-export const DefaultImage = 'http://localhost:9000/img/img/icon_trash.svg';
+export const DefaultImage = 'http://localhost:9000/img/img/his.jpg';
 
 interface TextCardProps {
     text: IText;
 }
 
 export const TextCard: React.FC<TextCardProps> = ({ text }) => {
-    const img = text.imageUrl || (text as any).image_url || DefaultImage;
+    const img = text.image_url || (text as any).imageUrl || DefaultImage;
 
     return (
         <article className="text-card" data-id={text.id}>

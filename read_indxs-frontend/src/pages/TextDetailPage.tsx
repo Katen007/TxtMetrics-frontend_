@@ -21,7 +21,7 @@ export const TextDetailPage = () => {
         }
     }, [id]);
 
-    const displayImage = text?.imageUrl || (text as any)?.image || DefaultImage;
+    const displayImage = text?.image_url || (text as any)?.imageUrl || DefaultImage;
 
     if (loading) {
         return (
