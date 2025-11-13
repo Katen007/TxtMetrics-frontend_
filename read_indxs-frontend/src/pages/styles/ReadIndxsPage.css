@@ -1,19 +1,38 @@
 .home-shell {
-  background:var(--bg);
-  min-height:100vh;
-  padding-top:56px;
-  display:flex;
-  align-items:flex-start;
-  justify-content:center;
-  color:var(--text);
+  position: relative;
+  background: var(--bg);
+  min-height: 100vh;
+  padding-top: 56px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  color: var(--text);
+  overflow: hidden;
+}
+.home-video-background {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: 50%;
+  height: 50%;
+  z-index: 0;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  pointer-events: none;
+}
+.home-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;
+  margin-top: 40px;
+  padding:16px;
+  text-align: center;
+  background-color: var(--bg);
+
 }
 
-.home-inner {
-  max-width:700px;
-  margin-top:40px;
-  padding:0 16px;
-  text-align:center;
-}
 
 .home-title-fix {
   margin-top:0;

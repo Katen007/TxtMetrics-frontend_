@@ -16,7 +16,7 @@ const MainLayout = () => (
 
 function App() {
     return (
-        <BrowserRouter>
+        <BrowserRouter basename="/RIP_FRONTEND_">
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route element={<MainLayout />}>
