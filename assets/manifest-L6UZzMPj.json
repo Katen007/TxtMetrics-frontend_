@@ -1,14 +1,14 @@
 {
-  "name": "Tile Notes",
-  "short_name": "Tile Notes",
-  "start_url": "/RepoName/",
+  "name": "ReadIndexs",
+  "short_name": "ReadIndexs",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#fdfdfd",
-  "theme_color": "#db4938",
+  "theme_color": "#3838dbff",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/logo192.png",
+      "src": "/vite.svg",
       "type": "image/png", "sizes": "192x192"
     },
     {
