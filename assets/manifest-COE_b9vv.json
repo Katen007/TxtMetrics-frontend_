@@ -8,11 +8,11 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/vite.svg",
+      "src": "icon.png",
       "type": "image/png", "sizes": "192x192"
     },
     {
-      "src": "/vite.svg",
+      "src": "icon.png",
       "type": "image/png", "sizes": "512x512"
     }
   ]
