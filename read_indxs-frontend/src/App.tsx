@@ -1,5 +1,5 @@
 // src/App.tsx
-import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { HashRouter , Routes, Route, Outlet } from 'react-router-dom';
 import { AppNavbar } from './components/Navbar';
 import { HomePage } from './pages/HomePage';
 import { TextsListPage } from './pages/TextsListPage';
@@ -16,7 +16,7 @@ const MainLayout = () => (
 
 function App() {
     return (
-        <BrowserRouter basename="/RIP_FRONTEND_">
+        <HashRouter>
             <Routes>
                 <Route path="/" element={<HomePage />} />
                 <Route element={<MainLayout />}>
@@ -24,7 +24,7 @@ function App() {
                     <Route path="/texts/:id" element={<TextDetailPage />} />
                 </Route>
             </Routes>
-        </BrowserRouter>
+        </HashRouter >
     );
 }
 

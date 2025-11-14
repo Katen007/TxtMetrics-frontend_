@@ -22,3 +22,6 @@ export interface CartIcon{
   draft_readIndxs_id?: number;
   texts_count: number;
 }
+export interface FilterState {
+  serviceFilter: string;
+}

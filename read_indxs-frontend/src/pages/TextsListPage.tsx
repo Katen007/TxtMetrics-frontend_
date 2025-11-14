@@ -3,13 +3,18 @@ import { Container, Spinner, Form, Badge, Image } from 'react-bootstrap';
 import { TextCard } from '../components/TextCard';
 import { getTexts, getCardInfo } from '../api/textApi';
 import { type CartIcon, type IText } from '../types';
+import { useSelector, useDispatch } from 'react-redux';
+import { setServiceFilter } from '../store/filtersSlice';
 import './styles/TextsListPage.css';
+import type { RootState } from '../store';
 
 export const TextsListPage = () => {
     const [texts, setTexts] = useState<IText[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
     const [cartData, setCartData] = useState<CartIcon>();
+    
+    const filter = useSelector((state: RootState) => state.filter.serviceFilter);
+    const dispatch = useDispatch();
 
     const fetchTexts = (filterTitle: string) => {
         setLoading(true);
@@ -31,13 +36,13 @@ export const TextsListPage = () => {
     }
 
     useEffect(() => {
-        fetchTexts('');
+        fetchTexts(filter);
         fetchCard()
     }, []);
 
     const handleSearchSubmit = (event: React.FormEvent) => {
         event.preventDefault();
-        fetchTexts(searchTerm);
+        fetchTexts(filter);
     };
 
     return (
@@ -51,8 +56,8 @@ export const TextsListPage = () => {
                     <input
                         type="text"
                         placeholder="Поиск текстов"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={filter}
+                        onChange={(e) => dispatch(setServiceFilter(e.target.value))}
                     />
                 </Form>
 
