@@ -1,43 +1,40 @@
-import { useState, useEffect } from 'react';
+// src/pages/TextsListPage.tsx
+import { useEffect } from 'react';
 import { Container, Spinner, Form, Badge, Image } from 'react-bootstrap';
-import { TextCard } from '../components/TextCard';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+
+import { TextCard } from '../components/TextCard';
 import { setServiceFilter } from '../store/slices/filterSlice';
 import { fetchTextsList } from '../store/slices/textsSlice';
-import { api } from '../api';
-import type { HandlerCartIconResponse } from '../api/Api';
+import { fetchCartBadge } from '../store/slices/cartSlice';
+
 import './styles/TextsListPage.css';
 import type { RootState, AppDispatch } from '../store';
 
 export const TextsListPage = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
 
   // фильтр из redux
   const filter = useSelector((state: RootState) => state.filter.serviceFilter);
-
-  // тексты и загрузка — из textsSlice
   const { list: texts, loading } = useSelector((state: RootState) => state.texts);
-
-  // данные по "корзине" (черновик индексов)
-  const [cartData, setCartData] = useState<HandlerCartIconResponse | null>(null);
+  const { readIndxs_id, count } = useSelector((state: RootState) => state.cart);
+  const { isAuthenticated } = useSelector((state: RootState) => state.user);
 
   // загрузка текстов при изменении фильтра
   useEffect(() => {
-    // если фильтр пустой, можно передавать undefined или {}
     const payload = filter ? { title: filter } : {};
-    // @ts-ignore — если ругается на тип undefined | {}
+    // @ts-ignore — тип фильтра может быть {}
     dispatch(fetchTextsList(payload as { title?: string }));
   }, [dispatch, filter]);
 
-  // загрузка информации о текущей заявке (значок корзины)
+  // подтягиваем информацию о текущем черновике
   useEffect(() => {
-    api.readindxs
-      .myTextCartList()
-      .then((resp) => setCartData(resp.data))
-      .catch((err) => {
-        console.error('Ошибка загрузки информации о заявке:', err);
-      });
-  }, []);
+    if (isAuthenticated) {
+      dispatch(fetchCartBadge());
+    }
+  }, [dispatch, isAuthenticated]);
 
   const handleSearchSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -45,6 +42,13 @@ export const TextsListPage = () => {
     // @ts-ignore
     dispatch(fetchTextsList(payload as { title?: string }));
   };
+
+  const handleOpenDraft = () => {
+    if (!readIndxs_id) return;
+    navigate(`/orders/${readIndxs_id}`);
+  };
+
+  const hasDraft = !!readIndxs_id;
 
   return (
     <div className="texts-page-shell">
@@ -76,19 +80,33 @@ export const TextsListPage = () => {
         )}
       </Container>
 
-      {/* плавающая "корзина" с текущей заявкой */}
-      <div className="readIndxs" title="Текущая заявка">
-        <Image
-          src="http://localhost:9000/img/img/cart2.svg"
-          className="readIndxs__icon"
-          width={24}
-          height={24}
-          alt="Корзина"
-        />
-        {cartData?.texts_count && cartData.texts_count > 0 ? (
-          <Badge className="readIndxs__badge">{cartData.texts_count}</Badge>
-        ) : null}
-      </div>
+      {/* плавающая кнопка перехода к черновику заявки */}
+      {isAuthenticated && (
+        <div
+          className="readIndxs"
+          title={
+            hasDraft
+              ? 'Перейти к текущей заявке'
+              : 'Черновик заявки отсутствует'
+          }
+          onClick={hasDraft ? handleOpenDraft : undefined}
+          style={{
+            cursor: hasDraft ? 'pointer' : 'not-allowed',
+            opacity: hasDraft ? 1 : 0.5,
+          }}
+        >
+          <Image
+            src="http://localhost:9000/img/img/cart2.svg"
+            className="readIndxs__icon"
+            width={24}
+            height={24}
+            alt="Корзина"
+          />
+          {count > 0 && (
+            <Badge className="readIndxs__badge">{count}</Badge>
+          )}
+        </div>
+      )}
     </div>
   );
 };

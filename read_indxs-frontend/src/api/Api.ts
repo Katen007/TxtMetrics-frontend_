@@ -10,6 +10,33 @@
  * ---------------------------------------------------------------
  */
 
+export interface DsReadIndxsInfoDTO {
+  comments?: string;
+  contacts?: string;
+  creator?: string;
+  date_create?: string;
+  date_end?: string;
+  date_form?: string;
+  id?: number;
+  moderator?: string;
+  status?: string;
+  texts?: DsReadIndxsToText[];
+}
+
+export interface DsReadIndxsToText {
+  calculation?: number;
+  count_sentences?: number;
+  count_syllables?: number;
+  count_words?: number;
+  data?: DsText;
+}
+
+export interface DsText {
+  id?: number;
+  image_url?: string;
+  title?: string;
+}
+
 export interface DsUser {
   id?: number;
   is_moderator?: boolean;
@@ -24,25 +51,6 @@ export interface HandlerCartIconResponse {
 export interface HandlerErrorResponse {
   description?: string;
   status?: string;
-}
-
-export interface HandlerReadIndxsInfoResponse {
-  id?: number;
-  status?: string;
-  texts?: HandlerTextDTO[];
-  thematic?: any;
-}
-
-export interface HandlerReadIndxsListItem {
-  created_at?: string;
-  id?: number;
-  status?: string;
-  texts_count?: number;
-  updated_at?: string;
-}
-
-export interface HandlerReadIndxsListResponse {
-  items?: HandlerReadIndxsListItem[];
 }
 
 export interface HandlerReadIndxsModerateRequest {
@@ -87,9 +95,9 @@ export interface HandlerMmBody {
   count_syllables?: number;
   count_words?: number;
   /** required: true */
-  read_indxs_id: number;
+  read_indxs_id?: number;
   /** required: true */
-  text_id: number;
+  text_id?: number;
 }
 
 export interface HandlerMmBodyDelete {
@@ -100,7 +108,7 @@ export interface HandlerMmBodyDelete {
 }
 
 export interface ModelsAuthoResp {
-  accessToken?: string;
+  AccessToken?: string;
   expiresIn?: string;
   tokenType?: string;
 }
@@ -345,7 +353,7 @@ export class Api<
      * @summary List read indices
      * @request GET:/readindxs
      * @secure
-     * @response `200` `HandlerReadIndxsListResponse` OK
+     * @response `200` `list` OK
      * @response `500` `HandlerErrorResponse` Internal Server Error
      */
     readindxsList: (
@@ -359,7 +367,7 @@ export class Api<
       },
       params: RequestParams = {},
     ) =>
-      this.request<HandlerReadIndxsListResponse, HandlerErrorResponse>({
+      this.request<list, HandlerErrorResponse>({
         path: `/readindxs`,
         method: "GET",
         query: query,
@@ -396,14 +404,41 @@ export class Api<
      * @summary Get read index by id
      * @request GET:/readindxs/{id}
      * @secure
-     * @response `200` `HandlerReadIndxsInfoResponse` OK
+     * @response `200` `DsReadIndxsInfoDTO` OK
      * @response `404` `HandlerErrorResponse` Not Found
      */
     readindxsDetail: (id: number, params: RequestParams = {}) =>
-      this.request<HandlerReadIndxsInfoResponse, HandlerErrorResponse>({
+      this.request<DsReadIndxsInfoDTO, HandlerErrorResponse>({
         path: `/readindxs/${id}`,
         method: "GET",
         secure: true,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags readindxs
+     * @name ReadindxsUpdate
+     * @summary Update read index (partial)
+     * @request PUT:/readindxs/{id}
+     * @secure
+     * @response `204` `string` No Content
+     * @response `400` `HandlerErrorResponse` Bad Request
+     * @response `500` `HandlerErrorResponse` Internal Server Error
+     */
+    readindxsUpdate: (
+      id: number,
+      body: HandlerTextUpdateRequest,
+      params: RequestParams = {},
+    ) =>
+      this.request<string, HandlerErrorResponse>({
+        path: `/readindxs/${id}`,
+        method: "PUT",
+        body: body,
+        secure: true,
+        type: ContentType.Json,
         format: "json",
         ...params,
       }),
@@ -432,44 +467,17 @@ export class Api<
      * No description
      *
      * @tags readindxs
-     * @name ReadindxsPartialUpdate
-     * @summary Update read index (partial)
-     * @request PATCH:/readindxs/{id}
-     * @secure
-     * @response `204` `string` No Content
-     * @response `400` `HandlerErrorResponse` Bad Request
-     * @response `500` `HandlerErrorResponse` Internal Server Error
-     */
-    readindxsPartialUpdate: (
-      id: number,
-      body: HandlerTextUpdateRequest,
-      params: RequestParams = {},
-    ) =>
-      this.request<string, HandlerErrorResponse>({
-        path: `/readindxs/${id}`,
-        method: "PATCH",
-        body: body,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags readindxs
-     * @name FormCreate
+     * @name FormUpdate
      * @summary Build/form read index
-     * @request POST:/readindxs/{id}/form
+     * @request PUT:/readindxs/{id}/form
      * @secure
      * @response `204` `string` No Content
      * @response `400` `HandlerErrorResponse` Bad Request
      */
-    formCreate: (id: number, params: RequestParams = {}) =>
+    formUpdate: (id: number, params: RequestParams = {}) =>
       this.request<string, HandlerErrorResponse>({
         path: `/readindxs/${id}/form`,
-        method: "POST",
+        method: "PUT",
         secure: true,
         format: "json",
         ...params,
@@ -479,21 +487,21 @@ export class Api<
      * No description
      *
      * @tags readindxs
-     * @name ModerateCreate
+     * @name ModerateUpdate
      * @summary Moderate read index
-     * @request POST:/readindxs/{id}/moderate
+     * @request PUT:/readindxs/{id}/moderate
      * @secure
      * @response `200` `HandlerReadIndxsModerateResponse` OK
      * @response `400` `HandlerErrorResponse` Bad Request
      */
-    moderateCreate: (
+    moderateUpdate: (
       id: number,
       body: HandlerReadIndxsModerateRequest,
       params: RequestParams = {},
     ) =>
       this.request<HandlerReadIndxsModerateResponse, HandlerErrorResponse>({
         path: `/readindxs/${id}/moderate`,
-        method: "POST",
+        method: "PUT",
         body: body,
         secure: true,
         type: ContentType.Json,
@@ -502,6 +510,29 @@ export class Api<
       }),
   };
   readindxsTexts = {
+    /**
+     * @description Partial update of word/sentence/syllable counters for specific text in a read index
+     *
+     * @tags read-indxs
+     * @name ReadindxsTextsUpdate
+     * @summary Update text metrics in read index
+     * @request PUT:/readindxs-texts
+     * @secure
+     * @response `204` `string` No Content
+     * @response `400` `HandlerErrorResponse` Bad Request
+     * @response `500` `HandlerErrorResponse` Internal Server Error
+     */
+    readindxsTextsUpdate: (body: HandlerMmBody, params: RequestParams = {}) =>
+      this.request<string, HandlerErrorResponse>({
+        path: `/readindxs-texts`,
+        method: "PUT",
+        body: body,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
     /**
      * No description
      *
@@ -521,32 +552,6 @@ export class Api<
       this.request<string, HandlerErrorResponse>({
         path: `/readindxs-texts`,
         method: "DELETE",
-        body: body,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description Partial update of word/sentence/syllable counters for specific text in a read index
-     *
-     * @tags read-indxs
-     * @name ReadindxsTextsPartialUpdate
-     * @summary Update text metrics in read index
-     * @request PATCH:/readindxs-texts
-     * @secure
-     * @response `204` `string` No Content
-     * @response `400` `HandlerErrorResponse` Bad Request
-     * @response `500` `HandlerErrorResponse` Internal Server Error
-     */
-    readindxsTextsPartialUpdate: (
-      body: HandlerMmBody,
-      params: RequestParams = {},
-    ) =>
-      this.request<string, HandlerErrorResponse>({
-        path: `/readindxs-texts`,
-        method: "PATCH",
         body: body,
         secure: true,
         type: ContentType.Json,
@@ -735,19 +740,19 @@ export class Api<
      * No description
      *
      * @tags users
-     * @name PatchUsers
+     * @name PutUsers
      * @summary Обновить свои данные
-     * @request PATCH:/users/me
+     * @request PUT:/users/me
      * @secure
      * @response `200` `DsUser` OK
      * @response `400` `HandlerTextUpdateRequest` Bad Request
      * @response `401` `HandlerTextUpdateRequest` Unauthorized
      * @response `500` `HandlerTextUpdateRequest` Internal Server Error
      */
-    patchUsers: (body: HandlerUserCredentials, params: RequestParams = {}) =>
+    putUsers: (body: HandlerUserCredentials, params: RequestParams = {}) =>
       this.request<DsUser, HandlerTextUpdateRequest>({
         path: `/users/me`,
-        method: "PATCH",
+        method: "PUT",
         body: body,
         secure: true,
         type: ContentType.Json,

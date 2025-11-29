@@ -1,0 +1,40 @@
+.order-text-card {
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.order-text-card-body {
+  display: flex;
+  align-items: center;
+}
+
+.order-text-image {
+  width: 120px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.order-text-title {
+  font-weight: 600;
+  color: #222;
+}
+
+.order-text-fields label {
+  font-size: 14px;
+  color: #555;
+}
+
+.order-actions button {
+  min-width: 180px;
+}
+
+.order-header h2 {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.order-header p {
+  margin: 0;
+  color: #555;
+}

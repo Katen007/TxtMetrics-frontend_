@@ -1,243 +1,257 @@
 import React, { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Form, Button, Image } from "react-bootstrap";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { Button, Spinner, Card, Form, Image, Container, Row, Col } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
-
-import {
-    fetchReadIndxsById,
-    fetchReadIndxsList,
-    updateReadIndxs,
-    updateTextMetrics,
-    removeTextFromReadIndxs,
-    formReadIndxs,
-    deleteReadIndxs,
-    resetOperationSuccess,
-    clearCurrent
-} from "../store/slices/readIndxsSlice";
-
 import type { RootState, AppDispatch } from "../store";
-import { Trash, CheckCircleFill, ExclamationCircle } from "react-bootstrap-icons";
+import {
+  fetchReadIndxsById,
+  deleteReadIndxs,
+  formReadIndxs,
+  removeTextFromReadIndxs,
+  updateTextMetrics,
+  updateReadIndxs,
+} from "../store/slices/readIndxsSlice";
+import type { HandlerMmBody, HandlerMmBodyDelete, DsReadIndxsToText, DsText } from "../api/Api";
 
-export const DefaultImage = "/mock_images/default.png";
+import "./styles/OrderPage.css";
 
-const STATUS_DRAFT = "draft";
-const STATUS_COMPLETED = "completed";
-const STATUS_REJECTED = "rejected";
+type MetricsState = Record<
+  number,
+  {
+    sentences: string;
+    words: string;
+    syllables: string;
+  }
+>;
 
-export const OrderPage = () => {
-    const { id } = useParams<{ id: string }>();
-    const dispatch = useDispatch<AppDispatch>();
+export const OrderPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
 
-    const { current, loading, operationSuccess } = useSelector(
-        (state: RootState) => state.readIndxs
-    );
+  const { current, loading } = useSelector((state: RootState) => state.readIndxs);
+  const { user } = useSelector((state: RootState) => state.user);
 
-    const [descriptions, setDescriptions] = useState<{ [key: number]: string }>({});
+  const isDraft = current?.status === "DRAFT";
+  const texts = (current?.texts as DsReadIndxsToText[]) || [];
 
-    /* ---------------------- LOAD ORDER ---------------------- */
-    useEffect(() => {
-        if (id) dispatch(fetchReadIndxsById(Number(id)));
+  const [metrics, setMetrics] = useState<MetricsState>({});
+  const [commenst, setCommenst] = useState<string>("");
+  const [contacts, setContacts] = useState<string>("");
 
-        return () => {
-            dispatch(clearCurrent());
-            dispatch(resetOperationSuccess());
-        };
-    }, [id, dispatch]);
+  useEffect(() => {
+    if (!id) return;
+    dispatch(fetchReadIndxsById(Number(id)));
+  }, [dispatch, id]);
 
-    /* ---------------------- SYNC TEXT DESCRIPTIONS ---------------------- */
-    useEffect(() => {
-        if (current?.texts) {
-            const map: Record<number, string> = {};
-            current.texts.forEach((t) => {
-                map[t.id!] = t.description ?? "";
-            });
-            setDescriptions(map);
-        }
-    }, [current]);
+  // init local metrics and top-level fields
+  useEffect(() => {
+    if (!current) return;
 
-    if (loading || !current)
-        return (
-            <Container className="pt-5">
-                <p>Загрузка...</p>
-            </Container>
-        );
+    setCommenst(current.comments ?? "");
+    setContacts(current.contacts ?? "");
 
-    const status = current.status ?? "draft";
+    const next: MetricsState = {};
+    (current.texts as DsReadIndxsToText[] | undefined)?.forEach((t) => {
+      const textId = t.data?.id;
+      if (!textId) return;
+      next[textId] = {
+        sentences: t.count_sentences !== undefined && t.count_sentences !== null ? String(t.count_sentences) : "",
+        words: t.count_words !== undefined && t.count_words !== null ? String(t.count_words) : "",
+        syllables: t.count_syllables !== undefined && t.count_syllables !== null ? String(t.count_syllables) : "",
+      };
+    });
+    setMetrics(next);
+  }, [current]);
 
-    const isDraft = status === STATUS_DRAFT;
-    const isCompleted = status === STATUS_COMPLETED;
-    const isRejected = status === STATUS_REJECTED;
+  const handleMetricChange = (textId: number, field: keyof MetricsState[number], value: string) => {
+    setMetrics((prev) => ({
+      ...prev,
+      [textId]: { ...(prev[textId] || { sentences: "", words: "", syllables: "" }), [field]: value },
+    }));
+  };
 
-    /* ---------------------- SAVE BASIC INFO ---------------------- */
-    const handleSaveMain = () => {
-        const data: Record<string, any> = {
-            status: current.status,
-        };
+  // on blur — send only changed numeric values (convert to int or undefined)
+  const handleMetricsBlur = async (textId: number) => {
+    if (!current?.id) return;
+    const m = metrics[textId];
+    if (!m) return;
 
-        dispatch(updateReadIndxs({ id: current.id!, data }))
-            .unwrap()
-            .then(() => alert("Изменения сохранены!"))
-            .catch(() => alert("Ошибка сохранения"));
+    const payload: HandlerMmBody = {
+      read_indxs_id: current.id,
+      text_id: textId,
     };
 
-    /* ---------------------- UPDATE TEXT DESCRIPTION ---------------------- */
-    const handleDescBlur = (textId: number) => {
-        const desc = descriptions[textId];
+    if (m.words !== "") payload.count_words = Number(m.words);
+    if (m.sentences !== "") payload.count_sentences = Number(m.sentences);
+    if (m.syllables !== "") payload.count_syllables = Number(m.syllables);
 
-        const body = {
-            text_id: textId,
-            read_indxs_id: current.id!,
-            count_words: undefined,
-            count_sentences: undefined,
-            count_syllables: undefined
-        } as any;
+    await dispatch(updateTextMetrics(payload));
+  };
 
-        dispatch(updateTextMetrics(body));
+  const handleDeleteText = async (textId: number) => {
+    if (!current?.id) return;
+    const payload: HandlerMmBodyDelete = {
+      read_indxs_id: current.id,
+      text_id: textId,
     };
+    await dispatch(removeTextFromReadIndxs(payload));
+  };
 
-    /* ---------------------- REMOVE TEXT ---------------------- */
-    const handleRemoveText = (textId: number) => {
-        if (!window.confirm("Удалить текст из заявки?")) return;
+  const handleFormReadIndxs = async () => {
+    if (!current?.id) return;
+    await dispatch(formReadIndxs(current.id));
+  };
 
-        dispatch(
-            removeTextFromReadIndxs({
-                read_indxs_id: current.id!,
-                text_id: textId
-            })
-        );
-    };
+  const handleDeleteRequest = async () => {
+    if (!current?.id) return;
+    await dispatch(deleteReadIndxs(current.id));
+    navigate("/orders");
+  };
 
-    /* ---------------------- FORM ORDER ---------------------- */
-    const handleFormOrder = () => {
-        dispatch(formReadIndxs(current.id!));
-    };
+  // on blur for top-level fields
+  const handleRequestFieldsBlur = async () => {
+    if (!current?.id) return;
+    await dispatch(updateReadIndxs({ id: current.id, data: { comments: commenst || undefined, contacts: contacts || undefined } }));
+  };
 
-    /* ---------------------- DELETE ORDER ---------------------- */
-    const handleDeleteOrder = () => {
-        if (!window.confirm("Удалить заявку целиком?")) return;
-
-        dispatch(deleteReadIndxs(current.id!));
-    };
-
-    /* ---------------------- SUCCESS PAGE ---------------------- */
-    if (operationSuccess) {
-        return (
-            <Container className="mt-5 pt-5 text-center">
-                <Card className="p-5 shadow-sm border-0">
-                    <h2 className="text-dark mb-3">Успешно!</h2>
-
-                    <p className="text-muted">Действие выполнено.</p>
-
-                    <div className="d-flex justify-content-center gap-3">
-                        <Link to="/texts">
-                            <Button variant="outline-danger">К текстам</Button>
-                        </Link>
-
-                        <Link to="/readindxs">
-                            <Button variant="danger">К списку заявок</Button>
-                        </Link>
-                    </div>
-                </Card>
-            </Container>
-        );
-    }
-
-    /* ---------------------- MAIN RENDER ---------------------- */
+  if (loading || !current) {
     return (
-        <Container className="pt-5 mt-5 pb-5">
-
-            <Card className="border-0 shadow-sm mb-4">
-                <Card.Body className="text-center py-2">
-                    <h4 className="fw-bold m-0">Заявка #{current.id}</h4>
-                </Card.Body>
-            </Card>
-
-            {/* ---------------------- TEXTS LIST ---------------------- */}
-            <div className="d-flex flex-column gap-3 mb-5">
-
-                {current.texts?.map((t) => (
-                    <Card key={t.id} className="border-0 shadow-sm">
-                        <Card.Body className="p-0">
-                            <Row className="g-0">
-                                {/* LEFT SIDE */}
-                                <Col md={4} className="d-flex align-items-center p-3 border-end">
-                                    <div className="me-3" style={{ width: 60 }}>
-                                        <Image src={t.image_url || DefaultImage} fluid rounded />
-                                    </div>
-
-                                    <div className="flex-grow-1">
-                                        <h6 className="fw-bold mb-2">{t.title}</h6>
-                                        <Link to={`/texts/${t.id}`}>
-                                            <Button size="sm" variant="danger">
-                                                Подробнее
-                                            </Button>
-                                        </Link>
-                                    </div>
-
-                                    {isDraft && (
-                                        <Button
-                                            variant="link"
-                                            className="text-muted p-0 ms-2"
-                                            onClick={() => handleRemoveText(t.id!)}
-                                        >
-                                            <Trash size={20} />
-                                        </Button>
-                                    )}
-                                </Col>
-
-                                {/* RIGHT SIDE — DESCRIPTION */}
-                                <Col md={8} className="p-3 bg-light">
-                                    <Form.Control
-                                        as="textarea"
-                                        rows={3}
-                                        placeholder="Описание..."
-                                        value={descriptions[t.id!] || ""}
-                                        onChange={(e) =>
-                                            setDescriptions((prev) => ({
-                                                ...prev,
-                                                [t.id!]: e.target.value
-                                            }))
-                                        }
-                                        onBlur={() => handleDescBlur(t.id!)}
-                                        disabled={!isDraft}
-                                        className="border-0 bg-white"
-                                        style={{ resize: "none" }}
-                                    />
-                                </Col>
-                            </Row>
-                        </Card.Body>
-                    </Card>
-                ))}
-            </div>
-
-            {/* ---------------------- ACTION BUTTONS ---------------------- */}
-            {isDraft && (
-                <Row>
-                    <Col className="d-flex gap-2">
-                        <Button variant="outline-success" onClick={handleSaveMain}>
-                            Сохранить изменения
-                        </Button>
-
-                        <Button variant="outline-danger" onClick={handleDeleteOrder}>
-                            Удалить заявку
-                        </Button>
-                    </Col>
-
-                    <Col className="text-end">
-                        <Button variant="outline-success" size="lg" onClick={handleFormOrder}>
-                            Сформировать <CheckCircleFill className="ms-2" />
-                        </Button>
-                    </Col>
-                </Row>
-            )}
-
-            {/* STATUS: REJECTED */}
-            {isRejected && (
-                <Card className="p-4 text-center mt-4 shadow-sm border-0">
-                    <ExclamationCircle size={48} className="text-danger mb-3" />
-                    <h5 className="text-danger fw-bold">Заявка отклонена</h5>
-                </Card>
-            )}
-        </Container>
+      <Container className="mt-4">
+        <Spinner animation="border" />
+      </Container>
     );
+  }
+
+  return (
+    <Container className="order-page mt-4">
+      <div className="order-header mb-4">
+        <h2>Заявка №{current.id}</h2>
+        <p>
+          Статус: <b>{current.status}</b>
+        </p>
+        <p>
+          Пользователь: <b>{user?.login ?? "—"}</b>
+        </p>
+      </div>
+
+      <Card className="mb-4 p-3">
+        <Form>
+          <Form.Group className="mb-3">
+            <Form.Label>Комментарий к заявке</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={commenst}
+              onChange={(e) => setCommenst(e.target.value)}
+              onBlur={handleRequestFieldsBlur}
+              placeholder="Комментарий к заявке"
+            />
+          </Form.Group>
+
+          <Form.Group>
+            <Form.Label>Контакты</Form.Label>
+            <Form.Control
+              type="text"
+              value={contacts}
+              onChange={(e) => setContacts(e.target.value)}
+              onBlur={handleRequestFieldsBlur}
+              placeholder="Email / телефон"
+            />
+          </Form.Group>
+        </Form>
+      </Card>
+
+      {texts.length > 0 ? (
+        texts.map((t, i) => {
+          const textId = t.data?.id ?? i;
+          const textData: DsText | undefined = t.data;
+          const m = metrics[textId] || { sentences: "", words: "", syllables: "" };
+
+          return (
+            <Card key={textId} className="order-text-card mb-3 shadow-sm">
+              <div className="order-text-card-body d-flex align-items-center">
+                <Image
+                  src={textData?.image_url || "//localhost:9000/img/img/his.jpg"}
+                  alt={textData?.title}
+                  className="order-text-image"
+                />
+
+                <div className="order-text-info flex-grow-1 mx-3">
+                  <h5 className="order-text-title">{textData?.title}</h5>
+
+                  <div className="order-text-fields d-flex flex-wrap gap-3 mt-2">
+                    <div className="d-flex flex-column">
+                      <label>Индекс читаемости:</label>
+                      <Form.Control readOnly value={t.calculation ?? ""} style={{ width: 100 }} />
+                    </div>
+
+                    <div className="d-flex flex-column">
+                      <label>Предложений:</label>
+                      <Form.Control
+                        value={m.sentences}
+                        style={{ width: 100 }}
+                        onChange={(e) => handleMetricChange(textId as number, "sentences", e.target.value)}
+                        onBlur={() => handleMetricsBlur(textId as number)}
+                      />
+                    </div>
+
+                    <div className="d-flex flex-column">
+                      <label>Слов:</label>
+                      <Form.Control
+                        value={m.words}
+                        style={{ width: 100 }}
+                        onChange={(e) => handleMetricChange(textId as number, "words", e.target.value)}
+                        onBlur={() => handleMetricsBlur(textId as number)}
+                      />
+                    </div>
+
+                    <div className="d-flex flex-column">
+                      <label>Слогов:</label>
+                      <Form.Control
+                        value={m.syllables}
+                        style={{ width: 100 }}
+                        onChange={(e) => handleMetricChange(textId as number, "syllables", e.target.value)}
+                        onBlur={() => handleMetricsBlur(textId as number)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="order-actions d-flex flex-column gap-2">
+                  <Link to={`/texts/${textId}`}>
+                    <Button variant="warning" size="sm">
+                      Подробнее
+                    </Button>
+                  </Link>
+                  {isDraft && (
+                    <Button variant="danger" size="sm" onClick={() => handleDeleteText(textId as number)}>
+                      Удалить
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </Card>
+          );
+        })
+      ) : (
+        <p>В заявке пока нет добавленных текстов.</p>
+      )}
+
+      <Row className="mt-4">
+        <Col xs={12} md={6}>
+          <Button variant="outline-danger" onClick={handleDeleteRequest}>
+            Удалить заявку
+          </Button>
+        </Col>
+        <Col xs={12} md={6} className="text-end">
+          <Button variant="success" onClick={handleFormReadIndxs} disabled={!isDraft}>
+            Отправить заявку
+          </Button>
+        </Col>
+      </Row>
+    </Container>
+  );
 };
+
+export default OrderPage;

@@ -1,3 +1,4 @@
+// src/pages/TextDetailPage.tsx
 import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Spinner, Button } from 'react-bootstrap';
@@ -7,9 +8,10 @@ import type { ICrumb } from '../types';
 import { DefaultImage } from '../components/TextCard';
 import { CustomBreadcrumbs } from '../components/Breadcrumbs';
 
-import { fetchTextById, addTextToDraft, clearCurrentText } from '../store/slices/textsSlice';
-import type { RootState, AppDispatch } from '../store';
+import { fetchTextById, clearCurrentText } from '../store/slices/textsSlice';
+import { addFactorToDraft } from '../store/slices/cartSlice';
 
+import type { RootState, AppDispatch } from '../store';
 import './styles/TextDetailPage.css';
 
 export const TextDetailPage = () => {
@@ -17,74 +19,66 @@ export const TextDetailPage = () => {
   const dispatch = useDispatch<AppDispatch>();
 
   const { currentText: text, loading } = useSelector((state: RootState) => state.texts);
+  const { isAuthenticated } = useSelector((state: RootState) => state.user);
 
   useEffect(() => {
     if (id) {
       dispatch(fetchTextById(id));
     }
 
-    // при выходе со страницы очищаем currentText
     return () => {
       dispatch(clearCurrentText());
     };
   }, [id, dispatch]);
 
-  const displayImage = text?.image_url || (text as any)?.imageUrl || DefaultImage;
+  const handleAddToDraft = async () => {
+    if (!isAuthenticated) {
+      alert('Для оформления заявки необходимо авторизоваться.');
+      return;
+    }
+    if (!id) return;
+    try {
+      await dispatch(addFactorToDraft(Number(id))).unwrap();
+      alert('Текст добавлен в черновик заявки.');
+    } catch (e) {
+      console.error(e);
+      alert('Не удалось добавить текст.');
+    }
+  };
 
-  if (loading || (!text && id)) {
+  if (loading || !text) {
     return (
-      <div className="detail-page-shell detail-page-shell--center">
-        <Spinner
-          animation="border"
-          style={{ color: 'var(--blue)', width: '3rem', height: '3rem' }}
-        />
-      </div>
-    );
-  }
-
-  if (!text) {
-    return (
-      <div className="detail-page-shell">
-        <div className="page-container not-found-block">
-          <h2>Текст не найден</h2>
-          <Link to="/texts">
-            <Button className="btn-more" style={{ marginTop: '12px' }}>
-              Вернуться к списку
-            </Button>
-          </Link>
+      <div className="detail-shell">
+        <div className="detail-inner">
+          <Spinner animation="border" />
         </div>
       </div>
     );
   }
 
   const crumbs: ICrumb[] = [
-    { label: 'Тексты', path: '/texts', active: false },
-    { label: text.title ?? 'Текст', active: true },
+    { label: 'Тексты', path: '/texts' },
+    { label: text.title || 'Текст', path: `/texts/${text.id}` },
   ];
 
-  const handleAddToDraft = () => {
-    if (!text.id) return;
-    dispatch(addTextToDraft(text.id));
-  };
-
   return (
-    <div className="detail-page-shell">
-      <div className="page-container">
-        <div className="detail-breadcrumbs-wrapper">
-          <CustomBreadcrumbs crumbs={crumbs} />
-        </div>
+    <div className="detail-shell">
+      <div className="detail-inner">
+        <CustomBreadcrumbs crumbs={crumbs} />
 
-        <h1 className="page-title">{text.title}</h1>
-
-        <section className="detail-grid">
-          <figure className="card detail-card">
-            <img src={displayImage} alt={text.title} />
-          </figure>
-
-          <div className="card muted desc">
-            {text.description}
+        <section className="detail-header">
+          <img
+            src={text.image_url || DefaultImage}
+            alt={text.title}
+            className="detail-image"
+          />
+          <div className="detail-header-content">
+            <h1 className="detail-title">{text.title}</h1>
+            <p className="detail-description">{text.description}</p>
           </div>
+        </section>
 
+        <section className="detail-meta">
           <div className="price-chip" aria-label="Цена услуги">
             <span className="price-chip__label">Цена:</span>
             <span className="price-chip__value">{text.price} ₽</span>
@@ -95,6 +89,11 @@ export const TextDetailPage = () => {
           <Button className="btn-more" onClick={handleAddToDraft}>
             Добавить в расчёт
           </Button>
+          <Link to="/texts">
+            <Button variant="outline-secondary" style={{ marginLeft: 12 }}>
+              Назад к списку
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

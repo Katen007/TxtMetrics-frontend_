@@ -1,34 +1,86 @@
-import { Button } from 'react-bootstrap';
+// src/components/TextCard.tsx
+import { useState } from 'react';
+import { Button, Spinner } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+
 import type { IText } from '../types';
+import type { AppDispatch, RootState } from '../store';
+
+import { addFactorToDraft } from '../store/slices/cartSlice';
 import './styles/TextCard.css';
 
 export const DefaultImage = 'http://localhost:9000/img/img/his.jpg';
 
 interface TextCardProps {
-    text: IText;
+  text: IText;
 }
 
 export const TextCard: React.FC<TextCardProps> = ({ text }) => {
-    const img = text.image_url || (text as any).imageUrl || DefaultImage;
+  const img = text.image_url || (text as any).imageUrl || DefaultImage;
+  const dispatch = useDispatch<AppDispatch>();
+  const { isAuthenticated } = useSelector((state: RootState) => state.user);
 
-    return (
-        <article className="text-card" data-id={text.id}>
-            <Link to={`/texts/${text.id}`} className="text-card__img-wrapper">
-                <img className="text-card__img" src={img} alt={text.title} />
-            </Link>
+  const [adding, setAdding] = useState(false);
 
-            <div className="text-card__body">
-                <h3 className="text-card__title">{text.title}</h3>
+  const handleAdd = async () => {
+    if (!isAuthenticated) {
+      alert('Для оформления заявки необходимо авторизоваться.');
+      return;
+    }
+    if (!text.id) return;
 
-                <div className="text-card__actions">
-                    <Link to={`/texts/${text.id}`}>
-                        <Button className="btn-more" type="button">
-                            Подробнее
-                        </Button>
-                    </Link>
-                </div>
-            </div>
-        </article>
-    );
+    try {
+      setAdding(true);
+      await dispatch(addFactorToDraft(text.id)).unwrap();
+      // можешь заменить alert на toast, если захочешь
+      alert('Текст добавлен в черновик заявки.');
+    } catch (e) {
+      console.error(e);
+      alert('Не удалось добавить текст в черновик.');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  return (
+    <article className="text-card">
+      <div className="text-card__imageWrapper">
+        <img className="text-card__image" src={img} alt={text.title} />
+      </div>
+
+      <div className="text-card__body">
+        <h3 className="text-card__title">{text.title}</h3>
+
+        <div className="text-card__actions">
+          <Link to={`/texts/${text.id}`}>
+            <Button className="btn-more" type="button">
+              Подробнее
+            </Button>
+          </Link>
+
+          <Button
+            className="btn-more"
+            type="button"
+            onClick={handleAdd}
+            disabled={adding || !text.id}
+            style={{ marginLeft: '8px' }}
+          >
+            {adding ? (
+              <>
+                <Spinner
+                  animation="border"
+                  size="sm"
+                  style={{ marginRight: 6 }}
+                />
+                Добавляем...
+              </>
+            ) : (
+              'Добавить'
+            )}
+          </Button>
+        </div>
+      </div>
+    </article>
+  );
 };

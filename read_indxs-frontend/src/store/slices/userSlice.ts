@@ -35,8 +35,9 @@ export const loginUser = createAsyncThunk(
         try {
             const response = await api.auth.loginCreate(credentials);
             const data = response.data;
-            if (data.data?.accessToken) localStorage.setItem('authToken', data.data.accessToken);
-            dispatch(fetchUserProfile());
+            console.log('Login response data:', data);
+            if (data.data?.AccessToken) localStorage.setItem('authToken', data.data.AccessToken);
+            console.log('Login response data:', localStorage.getItem('authToken'));
 
             return data;
         } catch (err: any) {
@@ -103,7 +104,7 @@ export const updateUserProfile = createAsyncThunk(
     'user/updateProfile',
     async ({data }: { data: HandlerUserCredentials }, { rejectWithValue }) => {
         try {
-            await api.users.patchUsers(data);
+            await api.users.putUsers(data);
             return { ...data }; 
         } catch (err: any) {
             return rejectWithValue(err.response?.data?.description || 'Ошибка обновления');
@@ -132,7 +133,7 @@ const userSlice = createSlice({
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.loading = false;
                 state.isAuthenticated = true;
-                state.token = action.payload.data?.accessToken || null;
+                state.token = action.payload.data?.AccessToken || null;
                 state.user =  null; // TODO: rewrite
             })
             .addCase(loginUser.rejected, (state, action) => {
@@ -171,6 +172,20 @@ const userSlice = createSlice({
             .addCase(fetchUserProfile.fulfilled, (state, action) => {
                 state.user = action.payload;
             })
+            // в builder в extraReducers:
+
+            .addCase(updateUserProfile.fulfilled, (state, action) => {
+            if (state.user && action.payload) {
+                if ((action.payload as any).login) {
+                state.user.login = (action.payload as any).login;
+                }
+                if ((action.payload as any).full_name) {
+                (state.user as any).full_name = (action.payload as any).full_name;
+                }
+            }
+            localStorage.setItem('userInfo', JSON.stringify(state.user));
+            })
+
 
             // === UPDATE PROFILE ===
             // .addCase(updateUserProfile.fulfilled, (state, action) => {

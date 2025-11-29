@@ -1,6 +1,7 @@
 // src/App.tsx
-import { HashRouter , Routes, Route, Outlet, BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import { AppNavbar } from './components/Navbar';
+
 import { HomePage } from './pages/HomePage';
 import { TextsListPage } from './pages/TextsListPage';
 import { TextDetailPage } from './pages/TextDetailPage';
@@ -9,32 +10,40 @@ import { RegisterPage } from './pages/RegisterPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { OrdersListPage } from './pages/OrdersListPage';
 import { OrderPage } from './pages/OrderPage';
+
 const MainLayout = () => (
-    <>
-        <AppNavbar />
-        <main style={{ paddingTop:'56px' }}>
-            <Outlet />
-        </main>
-    </>
+  <>
+    <AppNavbar />
+    {/* отступ под фиксированный navbar */}
+    <main style={{ paddingTop: '56px' }}>
+      <Outlet />
+    </main>
+  </>
 );
 
 function App() {
-    return (
-        <BrowserRouter>
+  return (
+    <BrowserRouter>
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />      
-        <Route path="/register" element={<RegisterPage />} />  
+        {/* всё, что с Navbar */}
         <Route element={<MainLayout />}>
-            <Route path="/texts" element={<TextsListPage />} />
-            <Route path="/texts/:id" element={<TextDetailPage />} />
-            <Route path="/profile" element={<ProfilePage />} /> 
-            <Route path="/orders" element={<OrdersListPage />} />
-            <Route path="/orders/:id" element={<OrderPage />} />
+          <Route path="/" element={<HomePage />} />
+          <Route path="/texts" element={<TextsListPage />} />
+          <Route path="/texts/:id" element={<TextDetailPage />} />
+          <Route path="/orders" element={<OrdersListPage />} />
+          <Route path="/orders/:id" element={<OrderPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
+
+        {/* гостевые страницы без главного layout (если хочешь — можно тоже внутрь MainLayout) */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+
+        {/* на всякий случай — редирект всего неизвестного на главную */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
-    );
+  );
 }
 
 export default App;
