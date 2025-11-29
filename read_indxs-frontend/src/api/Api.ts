@@ -54,6 +54,11 @@ export interface HandlerReadIndxsModerateResponse {
   status?: string;
 }
 
+export interface HandlerResponseModelsAuthoResp {
+  data?: ModelsAuthoResp;
+  ok?: boolean;
+}
+
 export interface HandlerTextCreateRequest {
   description?: string;
   price?: number;
@@ -92,6 +97,12 @@ export interface HandlerMmBodyDelete {
   read_indxs_id: number;
   /** required: true */
   text_id: number;
+}
+
+export interface ModelsAuthoResp {
+  accessToken?: string;
+  expiresIn?: string;
+  tokenType?: string;
 }
 
 import type {
@@ -290,9 +301,12 @@ export class Api<
      * @name LoginCreate
      * @summary Логин
      * @request POST:/auth/login
+     * @response `200` `HandlerResponseModelsAuthoResp` OK
+     * @response `400` `HandlerTextUpdateRequest` Bad Request
+     * @response `401` `HandlerTextUpdateRequest` Unauthorized
      */
     loginCreate: (body: HandlerUserCredentials, params: RequestParams = {}) =>
-      this.request<Record<string, boolean>, HandlerTextUpdateRequest>({
+      this.request<HandlerResponseModelsAuthoResp, HandlerTextUpdateRequest>({
         path: `/auth/login`,
         method: "POST",
         body: body,
@@ -309,6 +323,7 @@ export class Api<
      * @summary Логаут
      * @request POST:/auth/logout
      * @secure
+     * @response `200` `Record<string,boolean>` ok=true
      */
     logoutCreate: (body: any, params: RequestParams = {}) =>
       this.request<Record<string, boolean>, any>({
@@ -330,6 +345,8 @@ export class Api<
      * @summary List read indices
      * @request GET:/readindxs
      * @secure
+     * @response `200` `HandlerReadIndxsListResponse` OK
+     * @response `500` `HandlerErrorResponse` Internal Server Error
      */
     readindxsList: (
       query?: {
@@ -359,6 +376,8 @@ export class Api<
      * @summary Read indices cart icon info
      * @request GET:/readindxs/my-text-cart
      * @secure
+     * @response `200` `HandlerCartIconResponse` OK
+     * @response `400` `HandlerErrorResponse` Bad Request
      */
     myTextCartList: (params: RequestParams = {}) =>
       this.request<HandlerCartIconResponse, HandlerErrorResponse>({
@@ -377,6 +396,8 @@ export class Api<
      * @summary Get read index by id
      * @request GET:/readindxs/{id}
      * @secure
+     * @response `200` `HandlerReadIndxsInfoResponse` OK
+     * @response `404` `HandlerErrorResponse` Not Found
      */
     readindxsDetail: (id: number, params: RequestParams = {}) =>
       this.request<HandlerReadIndxsInfoResponse, HandlerErrorResponse>({
@@ -395,6 +416,8 @@ export class Api<
      * @summary Soft delete read index
      * @request DELETE:/readindxs/{id}
      * @secure
+     * @response `204` `string` No Content
+     * @response `500` `HandlerErrorResponse` Internal Server Error
      */
     readindxsDelete: (id: number, params: RequestParams = {}) =>
       this.request<string, HandlerErrorResponse>({
@@ -413,6 +436,9 @@ export class Api<
      * @summary Update read index (partial)
      * @request PATCH:/readindxs/{id}
      * @secure
+     * @response `204` `string` No Content
+     * @response `400` `HandlerErrorResponse` Bad Request
+     * @response `500` `HandlerErrorResponse` Internal Server Error
      */
     readindxsPartialUpdate: (
       id: number,
@@ -437,6 +463,8 @@ export class Api<
      * @summary Build/form read index
      * @request POST:/readindxs/{id}/form
      * @secure
+     * @response `204` `string` No Content
+     * @response `400` `HandlerErrorResponse` Bad Request
      */
     formCreate: (id: number, params: RequestParams = {}) =>
       this.request<string, HandlerErrorResponse>({
@@ -455,6 +483,8 @@ export class Api<
      * @summary Moderate read index
      * @request POST:/readindxs/{id}/moderate
      * @secure
+     * @response `200` `HandlerReadIndxsModerateResponse` OK
+     * @response `400` `HandlerErrorResponse` Bad Request
      */
     moderateCreate: (
       id: number,
@@ -480,6 +510,9 @@ export class Api<
      * @summary Remove text from read index
      * @request DELETE:/readindxs-texts
      * @secure
+     * @response `204` `string` No Content
+     * @response `400` `HandlerErrorResponse` Bad Request
+     * @response `500` `HandlerErrorResponse` Internal Server Error
      */
     readindxsTextsDelete: (
       body: HandlerMmBodyDelete,
@@ -503,6 +536,9 @@ export class Api<
      * @summary Update text metrics in read index
      * @request PATCH:/readindxs-texts
      * @secure
+     * @response `204` `string` No Content
+     * @response `400` `HandlerErrorResponse` Bad Request
+     * @response `500` `HandlerErrorResponse` Internal Server Error
      */
     readindxsTextsPartialUpdate: (
       body: HandlerMmBody,
@@ -526,6 +562,8 @@ export class Api<
      * @name TextsList
      * @summary List texts
      * @request GET:/texts
+     * @response `200` `(HandlerTextDTO)[]` OK
+     * @response `500` `HandlerErrorResponse` Internal Server Error
      */
     textsList: (
       query?: {
@@ -550,6 +588,9 @@ export class Api<
      * @summary Create text
      * @request POST:/texts
      * @secure
+     * @response `201` `HandlerTextDTO` Created
+     * @response `400` `HandlerErrorResponse` Bad Request
+     * @response `500` `HandlerErrorResponse` Internal Server Error
      */
     textsCreate: (body: HandlerTextCreateRequest, params: RequestParams = {}) =>
       this.request<HandlerTextDTO, HandlerErrorResponse>({
@@ -569,6 +610,8 @@ export class Api<
      * @name TextsDetail
      * @summary Get text by id
      * @request GET:/texts/{id}
+     * @response `200` `HandlerTextDTO` OK
+     * @response `404` `HandlerErrorResponse` Not Found
      */
     textsDetail: (id: number, params: RequestParams = {}) =>
       this.request<HandlerTextDTO, HandlerErrorResponse>({
@@ -586,6 +629,9 @@ export class Api<
      * @summary Soft delete text
      * @request DELETE:/texts/{id}
      * @secure
+     * @response `204` `string` No Content
+     * @response `400` `HandlerErrorResponse` Bad Request
+     * @response `500` `HandlerErrorResponse` Internal Server Error
      */
     textsDelete: (id: number, params: RequestParams = {}) =>
       this.request<string, HandlerErrorResponse>({
@@ -604,6 +650,9 @@ export class Api<
      * @summary Update text (partial)
      * @request PATCH:/texts/{id}
      * @secure
+     * @response `204` `string` No Content
+     * @response `400` `HandlerErrorResponse` Bad Request
+     * @response `500` `HandlerErrorResponse` Internal Server Error
      */
     textsPartialUpdate: (
       id: number,
@@ -628,6 +677,8 @@ export class Api<
      * @summary Добавить текст в черновик индексов пользователя
      * @request POST:/texts/{id}/add-to-draft
      * @secure
+     * @response `204` `void` No Content
+     * @response `400` `HandlerTextUpdateRequest` Bad Request
      */
     addToDraftCreate: (id: number, params: RequestParams = {}) =>
       this.request<void, HandlerTextUpdateRequest>({
@@ -645,6 +696,9 @@ export class Api<
      * @summary Upload text image
      * @request POST:/texts/{id}/image
      * @secure
+     * @response `201` `Record<string,string>` image_key
+     * @response `400` `HandlerErrorResponse` Bad Request
+     * @response `500` `HandlerErrorResponse` Internal Server Error
      */
     imageCreate: (id: number, file: number[], params: RequestParams = {}) =>
       this.request<Record<string, string>, HandlerErrorResponse>({
@@ -665,6 +719,8 @@ export class Api<
      * @summary Текущий пользователь
      * @request GET:/users/me
      * @secure
+     * @response `200` `DsUser` OK
+     * @response `401` `HandlerTextUpdateRequest` Unauthorized
      */
     getUsers: (params: RequestParams = {}) =>
       this.request<DsUser, HandlerTextUpdateRequest>({
@@ -683,6 +739,10 @@ export class Api<
      * @summary Обновить свои данные
      * @request PATCH:/users/me
      * @secure
+     * @response `200` `DsUser` OK
+     * @response `400` `HandlerTextUpdateRequest` Bad Request
+     * @response `401` `HandlerTextUpdateRequest` Unauthorized
+     * @response `500` `HandlerTextUpdateRequest` Internal Server Error
      */
     patchUsers: (body: HandlerUserCredentials, params: RequestParams = {}) =>
       this.request<DsUser, HandlerTextUpdateRequest>({
@@ -702,6 +762,10 @@ export class Api<
      * @name RegisterCreate
      * @summary Регистрация пользователя
      * @request POST:/users/register
+     * @response `201` `DsUser` Created
+     * @response `400` `HandlerTextUpdateRequest` Bad Request
+     * @response `409` `HandlerTextUpdateRequest` login already taken
+     * @response `500` `HandlerTextUpdateRequest` Internal Server Error
      */
     registerCreate: (
       body: HandlerUserCredentials,

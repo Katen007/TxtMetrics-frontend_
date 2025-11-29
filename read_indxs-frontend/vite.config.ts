@@ -36,7 +36,6 @@ export default defineConfig({
       }
     })
   ],
-  base: "/RIP_FRONTEND_",
   server: {
     https:{
     key: fs.readFileSync(path.resolve(__dirname, 'cert.key')),
