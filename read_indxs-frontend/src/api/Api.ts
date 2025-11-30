@@ -84,10 +84,12 @@ export interface HandlerTextDTO {
 export type HandlerTextUpdateRequest = Record<string, any>;
 
 export interface HandlerUserCredentials {
-  /** required: true */
-  login?: string;
+
   /** required: true */
   password?: string;
+  login?: string;
+  /** required: true */
+  
 }
 
 export interface HandlerMmBody {
@@ -740,7 +742,7 @@ export class Api<
      * No description
      *
      * @tags users
-     * @name PutUsers
+     * @name UsersUpdate
      * @summary Обновить свои данные
      * @request PUT:/users/me
      * @secure
@@ -749,11 +751,11 @@ export class Api<
      * @response `401` `HandlerTextUpdateRequest` Unauthorized
      * @response `500` `HandlerTextUpdateRequest` Internal Server Error
      */
-    putUsers: (body: HandlerUserCredentials, params: RequestParams = {}) =>
+    usersUpdate: (id: number, updateData: HandlerUserCredentials, params: RequestParams = {}) =>
       this.request<DsUser, HandlerTextUpdateRequest>({
         path: `/users/me`,
         method: "PUT",
-        body: body,
+        body: updateData,
         secure: true,
         type: ContentType.Json,
         format: "json",

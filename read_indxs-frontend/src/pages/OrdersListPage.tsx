@@ -80,12 +80,7 @@ export const OrdersListPage = () => {
     if (id) navigate(`/orders/${id}`);
   };
 
-  const handleFilterChange = (
-    e:
-      | React.ChangeEvent<HTMLInputElement>
-      | React.ChangeEvent<HTMLSelectElement>
-      | React.ChangeEvent<HTMLTextAreaElement>
-  ) => {
+  const handleFilterChange = (e: React.ChangeEvent<any>) => {
     setFilters({ ...filters, [e.target.name]: e.target.value });
   };
 

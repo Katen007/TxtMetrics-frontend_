@@ -38,7 +38,7 @@ export const loginUser = createAsyncThunk(
             console.log('Login response data:', data);
             if (data.data?.AccessToken) localStorage.setItem('authToken', data.data.AccessToken);
             console.log('Login response data:', localStorage.getItem('authToken'));
-
+            await dispatch(fetchUserProfile());
             return data;
         } catch (err: any) {
             const backendError = err.response?.data?.description || '';
@@ -102,13 +102,19 @@ export const fetchUserProfile = createAsyncThunk(
 // --- 5. ОБНОВЛЕНИЕ ПРОФИЛЯ ---
 export const updateUserProfile = createAsyncThunk(
     'user/updateProfile',
-    async ({data }: { data: HandlerUserCredentials }, { rejectWithValue }) => {
+    async ({id, data }: {id:number, data: HandlerUserCredentials }, { rejectWithValue }) => {
         try {
-            await api.users.putUsers(data);
-            return { ...data }; 
+            await api.users.usersUpdate(id,data);
+            return {id, ...data }; 
         } catch (err: any) {
-            return rejectWithValue(err.response?.data?.description || 'Ошибка обновления');
-        }
+            console.error(
+                "updateUserProfile error:",
+                err?.response?.data ?? err
+            );
+            const msg =
+                err?.response?.data?.description || "Ошибка обновления";
+            return rejectWithValue(msg);
+            }
     }
 );
 
@@ -134,7 +140,7 @@ const userSlice = createSlice({
                 state.loading = false;
                 state.isAuthenticated = true;
                 state.token = action.payload.data?.AccessToken || null;
-                state.user =  null; // TODO: rewrite
+                //state.user =  null; // TODO: rewrite
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false;
@@ -171,20 +177,16 @@ const userSlice = createSlice({
             // === FETCH PROFILE ===
             .addCase(fetchUserProfile.fulfilled, (state, action) => {
                 state.user = action.payload;
+                localStorage.setItem("userInfo", JSON.stringify(action.payload));
             })
             // в builder в extraReducers:
 
             .addCase(updateUserProfile.fulfilled, (state, action) => {
-            if (state.user && action.payload) {
-                if ((action.payload as any).login) {
-                state.user.login = (action.payload as any).login;
+                if (state.user) {
+                    if (action.payload.login) state.user.login = action.payload.login;
                 }
-                if ((action.payload as any).full_name) {
-                (state.user as any).full_name = (action.payload as any).full_name;
-                }
-            }
-            localStorage.setItem('userInfo', JSON.stringify(state.user));
-            })
+                localStorage.setItem('userInfo', JSON.stringify(state.user));
+            });
 
 
             // === UPDATE PROFILE ===

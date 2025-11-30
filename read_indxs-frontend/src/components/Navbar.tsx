@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { Navbar, Container, Nav, Button, Badge } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-
+import { PersonCircle, BoxArrowRight } from 'react-bootstrap-icons';
 import './styles/Navbar.css';
 import type { RootState, AppDispatch } from '../store';
 import { logoutUser } from '../store/slices/userSlice';
@@ -34,7 +34,7 @@ export const AppNavbar = () => {
     }
   };
 
-  const username = user?.login || (user?.id ? `user#${user.id}` : 'Пользователь');
+ 
 
   return (
     <Navbar fixed="top" className="app-header" bg="" variant="dark">
@@ -78,9 +78,12 @@ export const AppNavbar = () => {
 
           {isAuthenticated ? (
             <>
-              <span style={{ color: '#fff', fontSize: 14 }}>
-                {username}
-              </span>
+              <Nav.Link as={Link} to="/profile" className="text-white d-flex align-items-center gap-2">
+                    <PersonCircle size={20} />
+                    <span className="fw-bold">
+                        {user?.login|| 'Пользователь'}
+                    </span>
+              </Nav.Link>
               <Button
                 variant="outline-light"
                 size="sm"
@@ -101,13 +104,14 @@ export const AppNavbar = () => {
                 Вход
               </Button>
               <Button
-                variant="danger"
                 size="sm"
                 as={Link}
                 to="/register"
-              >
+                className="btn-orange"
+                >
                 Регистрация
-              </Button>
+                </Button>
+
             </>
           )}
         </Nav>

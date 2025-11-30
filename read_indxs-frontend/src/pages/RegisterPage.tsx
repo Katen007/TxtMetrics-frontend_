@@ -10,7 +10,7 @@ import './styles/main.css';
 
 
 export const RegisterPage = () => {
-    const [formData, setFormData] = useState({ full_name: '', login: '', password: '' });
+    const [formData, setFormData] = useState({ login: '', password: '' });
     const dispatch = useDispatch<AppDispatch>();
     const navigate = useNavigate();
     const { loading, error, registerSuccess } = useSelector((state: RootState) => state.user);
@@ -42,20 +42,10 @@ export const RegisterPage = () => {
                             <p className="text-muted">Создайте новый аккаунт</p>
                         </div>
 
-                        {error && <Alert variant="danger">{error}</Alert>}
+                        {error && <Alert variant="warning">{error}</Alert>}
 
                         <Form onSubmit={handleSubmit}>
-                            <Form.Floating className="mb-3">
-                                <Form.Control
-                                    id="fullName"
-                                    type="text"
-                                    placeholder="ФИО"
-                                    value={formData.full_name}
-                                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                                    required
-                                />
-                                <label htmlFor="fullName" style={{ color: '#495057' }}>ФИО</label>
-                            </Form.Floating>
+                            
 
                             <Form.Floating className="mb-3">
                                 <Form.Control
@@ -81,19 +71,30 @@ export const RegisterPage = () => {
                                 <label htmlFor="password" style={{ color: '#495057' }}>Пароль</label>
                             </Form.Floating>
 
-                            <Button 
-                                variant="danger" 
-                                type="submit" 
-                                className="w-100 py-3 fw-bold rounded-3 d-flex align-items-center justify-content-center gap-2"
-                                disabled={loading}
-                            >
-                                {loading ? <Spinner size="sm" animation="border" /> : <><PersonPlus size={20}/> Создать аккаунт</>}
-                            </Button>
+                            <Button  
+  type="submit"
+  className="w-100 py-3 fw-bold rounded-3 d-flex align-items-center justify-content-center gap-2"
+  disabled={loading}
+  style={{
+    backgroundColor: '#0d6efd',  // голубой фон
+    borderColor: '#0d6efd',
+    color: '#ffffff',            // белый текст/иконка
+  }}
+>
+  {loading ? (
+    <Spinner size="sm" animation="border" />
+  ) : (
+    <>
+      <PersonPlus size={20} /> Создать аккаунт
+    </>
+  )}
+</Button>
+
                         </Form>
 
                         <div className="text-center mt-4">
                             <span className="text-muted">Уже есть аккаунт? </span>
-                            <Link to="/login" className="text-danger fw-bold text-decoration-none">
+                            <Link to="/login" className="text-orange fw-bold text-decoration-none">
                                 Войти
                             </Link>
                         </div>

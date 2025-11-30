@@ -12,8 +12,8 @@ export const ProfilePage = () => {
     const navigate = useNavigate();
     const { user, token } = useSelector((state: RootState) => state.user);
     const [isEditing, setIsEditing] = useState(false);
-    const [editData, setEditData] = useState({ full_name: '', username: '', password: '' });
-
+    const [editData, setEditData] = useState({ login: '', password: '' });
+    console.log('PROFILE user = ', user);
     useEffect(() => {
         if (!token) navigate('/login');
     }, [token, navigate]);
@@ -21,8 +21,7 @@ export const ProfilePage = () => {
     useEffect(() => {
         if (user) {
             setEditData({
-                full_name: user.full_name || '',
-                username: user.username || '',
+                login: user.login || '',
                 password: '',
             });
         }
@@ -30,7 +29,7 @@ export const ProfilePage = () => {
 
     const handleSave = () => {
         if (user?.id) {
-            dispatch(updateUserProfile({ id: user.id, data: editData }))
+            dispatch(updateUserProfile({id:user.id, data: editData }))
             .unwrap()
             .then(() => {
                 setIsEditing(false);
@@ -49,8 +48,7 @@ export const ProfilePage = () => {
     const handleCancel = () => {
         setIsEditing(false);
         setEditData({
-            full_name: user?.full_name || '', 
-            username: user?.username || '', 
+            login: user?.login || '', 
             password: ''
         });
     };
@@ -65,7 +63,7 @@ export const ProfilePage = () => {
                         <Card className="shadow-sm border-0 rounded-4">
                             <Card.Header className="bg-white border-0 pt-4 pb-0 px-4 d-flex justify-content-between align-items-center">
                                 <h3 className="fw-bold mb-0" style={{ color: '#495057' }}>Личный кабинет</h3>
-                                {user.moderator && (
+                                {user.is_moderator && (
                                     <Badge bg="warning" text="dark" className="fs-6">
                                         MODERATOR
                                     </Badge>
@@ -77,34 +75,22 @@ export const ProfilePage = () => {
                                         <PersonCircle size={80} color="#495057" />
                                     </div>
                                     <div>
-                                        <h4 className="fw-bold mb-1">{user.full_name}</h4>
-                                        <p className="text-muted mb-0">@{user.username}</p>
+                                        <p className="text-muted mb-0">@{user.login}</p>
                                         <p className="text-muted small">ID: {user.id}</p>
                                     </div>
                                 </div>
 
                                 <Form>
                                     <Row className="g-3">
-                                        <Col md={6}>
-                                            <Form.Group>
-                                                <Form.Label style={{ color: '#495057', fontWeight: '500' }}>ФИО</Form.Label>
-                                                <Form.Control
-                                                    type="text"
-                                                    value={isEditing ? editData.full_name : user.full_name || ''}
-                                                    onChange={(e) => setEditData({ ...editData, full_name: e.target.value })}
-                                                    disabled={!isEditing}
-                                                    className={isEditing ? 'border-danger' : 'bg-light'}
-                                                />
-                                            </Form.Group>
-                                        </Col>
+                                        
                                         
                                         <Col md={6}>
                                             <Form.Group>
                                                 <Form.Label style={{ color: '#495057', fontWeight: '500' }}>Логин</Form.Label>
                                                 <Form.Control
                                                     type="text"
-                                                    value={isEditing ? editData.username : user.username || ''}
-                                                    onChange={(e) => setEditData({ ...editData, username: e.target.value })}
+                                                    value={isEditing ? editData.login : user.login || ''}
+                                                    onChange={(e) => setEditData({ ...editData, login: e.target.value })}
                                                     disabled={!isEditing}
                                                     className={isEditing ? 'border-danger' : 'bg-light'}
                                                 />
@@ -163,13 +149,15 @@ export const ProfilePage = () => {
                                             )}
                                         </div>
 
-                                        <Button 
-                                            variant="danger" 
-                                            onClick={handleLogout}
-                                            className="d-flex align-items-center gap-2"
-                                        >
-                                            <BoxArrowRight /> Выйти из аккаунта
-                                        </Button>
+                                        <Button  
+  variant="warning"
+  onClick={handleLogout}
+  className="d-flex align-items-center gap-2"
+  style={{ backgroundColor: '#ff7f00', borderColor: '#ff7f00', color: '#fff' }}
+>
+  <BoxArrowRight /> Выйти из аккаунта
+</Button>
+
                                     </div>
                                 </Form>
                             </Card.Body>
