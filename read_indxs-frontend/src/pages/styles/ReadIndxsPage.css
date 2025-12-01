@@ -1,46 +1,85 @@
+/* Важно: убрать внешние отступы, чтобы фон реально был от края до края */
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Корневой контейнер секции */
 .home-shell {
   position: relative;
-  background: var(--bg);
-  min-height: 100vh;
-  padding-top: 56px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  color: var(--text);
+  width: 100vw;
+  height: 100vh;
   overflow: hidden;
 }
-.home-video-background {
+
+/* Если HomePage живёт внутри .container, чтобы вылезти на всю ширину: */
+.home-shell {
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+/* Карусель на заднем плане, на всю область .home-shell */
+.home-bg-carousel {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  min-width: 100%;
-  min-height: 100%;
-  width: 50%;
-  height: 50%;
-  z-index: 0;
-  transform: translate(-50%, -50%);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+}
+
+.home-bg-carousel .carousel-inner,
+.home-bg-carousel .carousel-item {
+  width: 100%;
+  height: 100%;
+}
+
+.home-bg-carousel .carousel-item img,
+.home-bg-image {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  pointer-events: none;
 }
-.home-inner {
-  position: relative;
-  z-index: 1;
-  max-width: 700px;
-  margin-top: 40px;
-  padding:16px;
+
+/* Тёмный слой поверх карусели */
+.home-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  
+  z-index: -1;
+}
+
+/* Текст полностью поверх, по центру */
+.home-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;      /* по горизонтали */
+  justify-content: center;  /* по вертикали */
   text-align: center;
-  background-color: var(--bg);
-
+  color: #fff;
+  padding: 2rem;
 }
 
+/* убираем стандартный стиль ссылки */
+.home-link-reset {
+  color: inherit;
+  text-decoration: none;
+}
+
+.home-link-reset:hover {
+  color: inherit;
+  text-decoration: none;
+}
 
 .home-title-fix {
-  margin-top:0;
+  color: #fff;
 }
 
+
 .home-lead {
-  font-size:22px;
-  line-height:1.4;
-  color:#444;
-  margin:0 auto;
+  font-size: 1.1rem;
 }
