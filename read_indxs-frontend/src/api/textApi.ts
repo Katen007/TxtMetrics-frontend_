@@ -1,14 +1,13 @@
 import type { CartIcon, IPaginatedTexts, IText } from '../types';
 import { TEXTS_MOCK, CART_MOCK } from './mock';
 
-const API_PREFIX = '/api';
+const API_PREFIX = 'http://10.102.37.150:8080/api';
 
 // Получение списка текстов с фильтраией по названию
 export const getTexts = async (title: string): Promise<IPaginatedTexts> => {
     const url = title 
         ? `${API_PREFIX}/texts?title=${encodeURIComponent(title)}`
-        : `${API_PREFIX}/texts`;
-
+        : `${API_PREFIX}/texts`;// 10.102.37.150 172.20.10.7 192.168.1.41
     try {
         const response = await fetch(url);
         if (!response.ok) {
@@ -24,6 +23,7 @@ export const getTexts = async (title: string): Promise<IPaginatedTexts> => {
         const filteredMockItems = TEXTS_MOCK.items.filter(text =>
             text.title.toLowerCase().includes(title.toLowerCase())
         );
+        alert(error);
         return { items: filteredMockItems, total: filteredMockItems.length };
     }
 };

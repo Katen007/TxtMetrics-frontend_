@@ -49,13 +49,13 @@ export const TextsListPage = () => {
         <div className="texts-page-shell">
             <Container className="texts-container">
                 {/* заголовок */}
-                <h1 className="page-title--small">Тексты</h1>
+                <h1 className="page-title--small">Текста</h1>
 
                 {/* поиск */}
                 <Form className="search" onSubmit={handleSearchSubmit}>
                     <input
                         type="text"
-                        placeholder="Поиск текстов"
+                        placeholder="Поиск текстов..."
                         value={filter}
                         onChange={(e) => dispatch(setServiceFilter(e.target.value))}
                     />

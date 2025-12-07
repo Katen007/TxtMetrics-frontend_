@@ -6,7 +6,7 @@ export const TEXTS_MOCK: IPaginatedTexts = {
     {
         "id": 1,
         "image_url": "https://img.freepik.com/free-photo/close-up-pages-book_23-2147779276.jpg?semt=ais_incoming&w=740&q=80",
-        "title": "Научная статья",
+        "title": "Научная статья1",
         "description": "Мы анализируем научные тексты: проверяем структуру, терминологическую насыщенность и вычисляем индексы читабельности (Флеша, Фога, SMOG). Отчёт покажет, насколько материал удобен для чтения и как его упростить.",
         "price": 125
     },
