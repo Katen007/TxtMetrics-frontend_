@@ -31,7 +31,7 @@ export const fetchCartBadge = createAsyncThunk(
     }
 );
 
-// Добавление фактора в черновик 
+// Добавление текста в черновик 
 export const addFactorToDraft = createAsyncThunk(
     'cart/addToDraft',
     async (textId: number, { dispatch, rejectWithValue }) => {
@@ -40,7 +40,7 @@ export const addFactorToDraft = createAsyncThunk(
             dispatch(fetchCartBadge());
             return textId;
         } catch (error: any) {
-            alert("Ошибка при добавлении: " + (error.response?.data?.description || "Неизвестная ошибка"));
+            
             return rejectWithValue('Failed to add');
         }
     }

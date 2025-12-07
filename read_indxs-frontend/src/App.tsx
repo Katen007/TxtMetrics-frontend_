@@ -8,8 +8,8 @@ import { TextDetailPage } from './pages/TextDetailPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ProfilePage } from './pages/ProfilePage';
-import { OrdersListPage } from './pages/OrdersListPage';
-import { OrderPage } from './pages/OrderPage';
+import { ReadIndexsListPage } from './pages/ReadIndxsListPage';
+import { ReadIndexsPage } from './pages/ReadIndxsPage';
 
 const MainLayout = () => (
   <>
@@ -30,8 +30,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/texts" element={<TextsListPage />} />
           <Route path="/texts/:id" element={<TextDetailPage />} />
-          <Route path="/orders" element={<OrdersListPage />} />
-          <Route path="/orders/:id" element={<OrderPage />} />
+          <Route path="/orders" element={<ReadIndexsListPage />} />
+          <Route path="/orders/:id" element={<ReadIndexsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 

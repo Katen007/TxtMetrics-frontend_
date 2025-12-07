@@ -25,19 +25,15 @@ export const TextCard: React.FC<TextCardProps> = ({ text }) => {
 
   const handleAdd = async () => {
     if (!isAuthenticated) {
-      alert('Для оформления заявки необходимо авторизоваться.');
       return;
     }
     if (!text.id) return;
 
     try {
       setAdding(true);
-      await dispatch(addFactorToDraft(text.id)).unwrap();
-      // можешь заменить alert на toast, если захочешь
-      alert('Текст добавлен в черновик заявки.');
+      await dispatch(addFactorToDraft(text.id));
     } catch (e) {
       console.error(e);
-      alert('Не удалось добавить текст в черновик.');
     } finally {
       setAdding(false);
     }

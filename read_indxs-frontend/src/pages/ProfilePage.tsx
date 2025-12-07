@@ -30,13 +30,12 @@ export const ProfilePage = () => {
     const handleSave = () => {
         if (user?.id) {
             dispatch(updateUserProfile({id:user.id, data: editData }))
-            .unwrap()
+            
             .then(() => {
                 setIsEditing(false);
                 setEditData(prev => ({ ...prev, password: '' }));
-                alert('Профиль обновлен!');
             })
-            .catch((err) => alert(`Ошибка: ${err}`));
+            .catch((err) => console.log(`Ошибка: ${err}`));
         }
     };
 

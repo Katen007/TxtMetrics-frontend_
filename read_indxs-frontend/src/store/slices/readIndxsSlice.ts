@@ -128,10 +128,24 @@ export const formReadIndxs = createAsyncThunk<number, number, { rejectValue: str
       await api.readindxs.formUpdate(id);
       return id;
     } catch (err: any) {
-      return rejectWithValue(err?.response?.data || "Ошибка формирования заявки");
+      const serverData = err?.response?.data;
+
+      if (serverData && typeof serverData === "object" && "description" in serverData) {
+        return rejectWithValue(
+          (serverData as { description?: string }).description ||
+            "Ошибка формирования заявки"
+        );
+      }
+
+      if (typeof serverData === "string") {
+        return rejectWithValue(serverData);
+      }
+
+      return rejectWithValue("Ошибка формирования заявки");
     }
   }
 );
+
 
 export const deleteReadIndxs = createAsyncThunk<number, number, { rejectValue: string }>(
   "readIndxs/delete",
@@ -253,9 +267,10 @@ const readIndxsSlice = createSlice({
         state.operationSuccess = true;
       })
       .addCase(formReadIndxs.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload ?? "Ошибка";
+      state.loading = false;
+      state.error = action.payload ?? "Ошибка";
       })
+
       // delete
       .addCase(deleteReadIndxs.pending, (state) => {
         state.loading = true;

@@ -14,7 +14,7 @@ export const AppNavbar = () => {
   const navigate = useNavigate();
 
   const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.user);
-  const { readIndxs_id, count } = useSelector((state: RootState) => state.cart);
+  // const { readIndxs_id, count } = useSelector((state: RootState) => state.cart);
 
   // Подтягиваем бейджик корзины, когда пользователь залогинен
   useEffect(() => {
@@ -25,7 +25,7 @@ export const AppNavbar = () => {
 
   const handleLogout = async () => {
     try {
-      await dispatch(logoutUser()).unwrap();
+      await dispatch(logoutUser());
     } catch (e) {
       console.warn(e);
     } finally {
@@ -57,7 +57,7 @@ export const AppNavbar = () => {
 
         <Nav className="ms-auto align-items-center gap-2">
           {/* Кнопка перехода к черновику заявки по заданию */}
-          {isAuthenticated && (
+          {/* {isAuthenticated && (
             <Button
               as={Link}
               to={readIndxs_id ? `/orders/${readIndxs_id}` : '#'}
@@ -74,7 +74,7 @@ export const AppNavbar = () => {
                 {count}
               </Badge>
             </Button>
-          )}
+          )} */}
 
           {isAuthenticated ? (
             <>

@@ -22,7 +22,7 @@ const storedUser = localStorage.getItem('userInfo');
 const initialState: UserState = {
     user: storedUser ? JSON.parse(storedUser) : null,
     token: storedToken || null,
-    isAuthenticated: !!storedToken,
+    isAuthenticated: false,
     registerSuccess: false,
     loading: false,
     error: null,
@@ -91,7 +91,7 @@ export const fetchUserProfile = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await api.users.getUsers();
-            localStorage.setItem('userInfo', JSON.stringify(response.data));
+            //localStorage.setItem('userInfo', JSON.stringify(response.data));
             return response.data;
         } catch (err: any) {
             return rejectWithValue('Не удалось загрузить профиль');
@@ -177,7 +177,7 @@ const userSlice = createSlice({
             // === FETCH PROFILE ===
             .addCase(fetchUserProfile.fulfilled, (state, action) => {
                 state.user = action.payload;
-                localStorage.setItem("userInfo", JSON.stringify(action.payload));
+                //localStorage.setItem("userInfo", JSON.stringify(action.payload));
             })
             // в builder в extraReducers:
 
@@ -185,7 +185,7 @@ const userSlice = createSlice({
                 if (state.user) {
                     if (action.payload.login) state.user.login = action.payload.login;
                 }
-                localStorage.setItem('userInfo', JSON.stringify(state.user));
+                //localStorage.setItem('userInfo', JSON.stringify(state.user));
             });
 
 

@@ -25,7 +25,7 @@ export const LoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await dispatch(loginUser(formData)).unwrap();
+      await dispatch(loginUser(formData));
       navigate("/texts");
     } catch (err) {
       console.error(err);

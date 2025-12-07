@@ -33,16 +33,13 @@ export const TextDetailPage = () => {
 
   const handleAddToDraft = async () => {
     if (!isAuthenticated) {
-      alert('Для оформления заявки необходимо авторизоваться.');
       return;
     }
     if (!id) return;
     try {
-      await dispatch(addFactorToDraft(Number(id))).unwrap();
-      alert('Текст добавлен в черновик заявки.');
+      await dispatch(addFactorToDraft(Number(id)));
     } catch (e) {
       console.error(e);
-      alert('Не удалось добавить текст.');
     }
   };
 
