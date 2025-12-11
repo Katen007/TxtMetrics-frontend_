@@ -1,50 +1,66 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Container,
+  Table,
   Form,
   Row,
   Col,
   Badge,
   Spinner,
   Card,
+  ListGroup,
+  Button,
 } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import {
+  ExclamationCircleFill,
+  Funnel,
+  PersonFill,
+  CheckLg,
+  XCircleFill,
+} from "react-bootstrap-icons";
 
-import { fetchReadIndxsList } from "../store/slices/readIndxsSlice";
+import {
+  fetchReadIndxsList,
+  moderateReadIndxs,
+} from "../store/slices/readIndxsSlice";
 import type { AppDispatch, RootState } from "../store";
 
-type ReadIndxsListItem = {
-  id: number;
-  status?: string;
-  date_create?: string;
-  date_form?: string;
-  date_end?: string;
-  commenst?: string;
-  contacts?: string;
-  creator?: string;
-  moderator?: string;
-  calculations?: number[]; // optional
-  texts_count?: number; // optional
+import "./styles/ReadIndxsListPage.css";
+
+const STATUS = {
+  DRAFT: "DRAFT",
+  FORMED: "FORMED",
+  IN_PROGRESS: "IN_PROGRESS",
+  COMPLETED: "COMPLETED",
+  REJECTED: "REJECTED",
+  DELETED: "DELETED",
+};
+
+const normalizeStatus = (s?: string) => (s || "").toUpperCase();
+
+const isModerationPending = (status?: string) => {
+  const s = normalizeStatus(status);
+  return s === STATUS.FORMED || s === STATUS.IN_PROGRESS;
 };
 
 const getStatusBadge = (status?: string) => {
-  const s = status?.toLowerCase();
+  const s = normalizeStatus(status);
 
   switch (s) {
-    case "draft":
-    case "dрафт":
+    case STATUS.DRAFT:
       return <Badge bg="secondary">Черновик</Badge>;
-    case "deleted":
-      return <Badge bg="dark">Удалена</Badge>;
-    case "in_progress":
-      return <Badge bg="primary">В работе</Badge>;
-    case "completed":
-      return <Badge bg="success">Завершена</Badge>;
-    case "rejected":
-      return <Badge bg="danger">Отклонена</Badge>;
-    case "formed":
+    case STATUS.FORMED:
       return <Badge bg="info">Сформирована</Badge>;
+    case STATUS.IN_PROGRESS:
+      return <Badge bg="primary">В работе</Badge>;
+    case STATUS.COMPLETED:
+      return <Badge bg="success">Завершена</Badge>;
+    case STATUS.REJECTED:
+      return <Badge bg="danger">Отклонена</Badge>;
+    case STATUS.DELETED:
+      return <Badge bg="dark">Удалена</Badge>;
     default:
       return (
         <Badge bg="light" text="dark">
@@ -54,222 +70,387 @@ const getStatusBadge = (status?: string) => {
   }
 };
 
-// утилита: формат даты (строка -> локальная строка)
-const formatDateTime = (value?: string) => {
-  if (!value) return null;
+const toDate = (value?: string) => {
+  if (!value) return "-";
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleString("ru-RU");
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleDateString("ru-RU");
 };
 
-// утилита: сегодня и вчера в формате yyyy-mm-dd
-const getDefaultDateFilters = () => {
-  const toISO = (d: Date) => d.toISOString().slice(0, 10);
+// формат для input[type="date"] -> YYYY-MM-DD
+const formatDateInput = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
+// создатель – логин (строка)
+const extractCreatorLogin = (order: any): string => {
+  const raw =
+    order?.creator_login ?? // основной вариант
+    order?.creator ?? // запасной
+    order?.user_login ?? // если бэк назвал иначе
+    order?.user ?? null;
 
-  return {
-    date_from: toISO(yesterday),
-    date_to: toISO(today),
-  };
+  if (!raw) return "—";
+  return String(raw);
 };
 
 export const ReadIndexsListPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
-  const list = useSelector((state: RootState) => state.readIndxs?.list ?? []);
-  const loading = useSelector((state: RootState) => state.readIndxs?.loading ?? false);
+  const { list, loading } = useSelector((state: RootState) => state.readIndxs);
+  const { user } = useSelector((state: RootState) => state.user);
 
-  const defaultDates = getDefaultDateFilters();
+  const isModerator = !!user?.is_moderator;
 
-  const [filters, setFilters] = useState({
-    status: "all",
-    date_from: defaultDates.date_from,
-    date_to: defaultDates.date_to,
+  // API-фильтры (бэкенд) — по умолчанию date_to = сегодня
+  const [apiFilters, setApiFilters] = useState(() => {
+    const todayStr = formatDateInput(new Date());
+    const fromdayStr = formatDateInput(
+      new Date(new Date().setDate(new Date().getDate() - 1))
+    );
+    return {
+      status: "all",
+      date_from: fromdayStr,
+      date_to: todayStr, // <- сегодняшняя дата по умолчанию
+    };
   });
 
-  useEffect(() => {
-    const params: any = {};
-    if (filters.status && filters.status !== "all") {
-      params.status = filters.status.toUpperCase();
-    }
-    if (filters.date_from) params.date_from = filters.date_from;
-    if (filters.date_to) params.date_to = filters.date_to;
-    dispatch(fetchReadIndxsList(params));
-  }, [filters, dispatch]);
+  // Фильтр по создателю (логин, фронт, только модератор)
+  const [selectedCreatorLogin, setSelectedCreatorLogin] = useState<
+    string | "all"
+  >("all");
 
-  const handleCardClick = (id?: number) => {
+  // --- SHORT POLLING ---
+  useEffect(() => {
+    const buildParams = () => {
+      const params: any = {};
+      if (apiFilters.status && apiFilters.status !== "all") {
+        params.status = normalizeStatus(apiFilters.status);
+      }
+      if (apiFilters.date_from) params.date_from = apiFilters.date_from;
+      if (apiFilters.date_to) params.date_to = apiFilters.date_to;
+      return params;
+    };
+
+    const loadData = () => dispatch(fetchReadIndxsList(buildParams()));
+
+    loadData();
+    const intervalId = setInterval(loadData, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [dispatch, apiFilters]);
+
+  // --- Список пользователей для панели модератора (по логину) ---
+  const creatorsStats = useMemo(() => {
+    if (!isModerator) return [];
+
+    const stats = new Map<string, { total: number; pending: number }>();
+
+    (list || []).forEach((order: any) => {
+      const login = extractCreatorLogin(order);
+      if (login === "—") return; // заявки без логина не учитываем
+
+      if (!stats.has(login)) {
+        stats.set(login, { total: 0, pending: 0 });
+      }
+
+      const s = stats.get(login)!;
+      s.total += 1;
+      if (isModerationPending(order.status)) s.pending += 1;
+    });
+
+    return Array.from(stats.entries()).map(([login, v]) => ({
+      login,
+      total: v.total,
+      pending: v.pending,
+    }));
+  }, [list, isModerator]);
+
+  // --- Фронт-фильтрация по логину создателя ---
+  const displayedList = useMemo(() => {
+    if (!list) return [];
+    if (!isModerator) return list;
+
+    if (selectedCreatorLogin === "all") return list;
+
+    return list.filter(
+      (o: any) => extractCreatorLogin(o) === selectedCreatorLogin
+    );
+  }, [list, isModerator, selectedCreatorLogin]);
+
+  const handleRowClick = (id?: number) => {
     if (id) navigate(`/orders/${id}`);
   };
 
-  const handleFilterChange = (e: React.ChangeEvent<any>) => {
-    setFilters({ ...filters, [e.target.name]: e.target.value });
+  const handleApiFilterChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    setApiFilters({ ...apiFilters, [e.target.name]: e.target.value });
   };
 
-  const totalFound = list?.length ?? 0;
+  const handleModerate = (
+    e: React.MouseEvent,
+    id: number,
+    action: "complete" | "reject"
+  ) => {
+    e.stopPropagation();
+    dispatch(moderateReadIndxs({ id, action }));
+  };
 
   return (
-    <Container className="pt-5 mt-5">
-      <h2 className="fw-bold mb-4 text-center" style={{ color: "#495057" }}>
-        История заявок
+    <Container fluid className="pt-5 mt-5 px-4">
+      <h2 className="fw-bold mb-4 text-center text-secondary">
+        {isModerator ? "Панель модератора" : "История заявок"}
       </h2>
 
-      {/* Фильтры */}
-      <Card className="mb-4 border-0 shadow-sm bg-light">
-        <Card.Body>
-          <Row className="g-3">
-            <Col md={4}>
-              <Form.Label>Статус</Form.Label>
-              <Form.Select name="status" value={filters.status} onChange={handleFilterChange}>
-                <option value="all">Все</option>
-                <option value="draft">Черновик</option>
-                <option value="in_progress">В работе</option>
-                <option value="completed">Завершена</option>
-                <option value="rejected">Отклонена</option>
-                <option value="deleted">Удалена</option>
-                <option value="formed">Сформирована</option>
-              </Form.Select>
-            </Col>
+      <Row>
+        {/* Левая колонка модератора: пользователи */}
+        {isModerator && (
+          <Col lg={3} className="mb-4">
+            <Card className="shadow-sm border-0 h-100">
+              <Card.Header className="bg-warning text-dark fw-bold d-flex align-items-center gap-2">
+                <PersonFill /> Пользователи
+              </Card.Header>
 
-            <Col md={4}>
-              <Form.Label>Дата создания (от)</Form.Label>
-              <Form.Control
-                type="date"
-                name="date_from"
-                value={filters.date_from}
-                onChange={handleFilterChange}
-              />
-            </Col>
-
-            <Col md={4}>
-              <Form.Label>Дата создания (до)</Form.Label>
-              <Form.Control
-                type="date"
-                name="date_to"
-                value={filters.date_to}
-                onChange={handleFilterChange}
-              />
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
-
-      {/* Информация по количеству найденных заявок */}
-      {!loading && (
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <div className="text-muted">
-            Найдено заявок: <b>{totalFound}</b>
-          </div>
-          {(filters.date_from || filters.date_to) && (
-            <small className="text-secondary">
-              Период: {filters.date_from || "—"} — {filters.date_to || "—"}
-            </small>
-          )}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="text-center">
-          <Spinner animation="border" variant="danger" />
-        </div>
-      ) : totalFound > 0 ? (
-        // Заявки в виде карточек
-        <Row xs={1} md={2} lg={3} className="g-3">
-          {list.map((order: ReadIndxsListItem) => {
-            const created = formatDateTime(order.date_create);
-            const updated =
-              formatDateTime(order.date_form) ||
-              formatDateTime(order.date_end);
-
-            const calculationsArray = Array.isArray(order.calculations)
-              ? order.calculations
-              : [];
-
-            const nonEmptyCalculations = calculationsArray.filter(
-              (v) => v !== null && v !== undefined
-            );
-            const totalResults = calculationsArray.length;
-            const nonEmptyCount = nonEmptyCalculations.length;
-
-            const avgReadIndex =
-              nonEmptyCount > 0
-                ? nonEmptyCalculations.reduce((sum, val) => sum + val, 0) /
-                  nonEmptyCount
-                : null;
-
-            return (
-              <Col key={order.id}>
-                <Card
-                  className="h-100 shadow-sm border-0"
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleCardClick(order.id)}
+              <ListGroup variant="flush" className="user-filter-list">
+                <ListGroup.Item
+                  action
+                  active={selectedCreatorLogin === "all"}
+                  onClick={() => setSelectedCreatorLogin("all")}
+                  className="d-flex justify-content-between align-items-center"
                 >
-                  <Card.Body>
-                    <div className="d-flex justify-content-between align-items-center mb-2">
-                      <Card.Title className="mb-0 me-2">
-                        Заявка №{order.id}
-                      </Card.Title>
-                      {getStatusBadge(order.status)}
-                    </div>
+                  <span>Все пользователи</span>
+                  <Badge bg="secondary" pill>
+                    {list.length}
+                  </Badge>
+                </ListGroup.Item>
 
-                    <div className="small text-muted mb-2">
-                      <div>
-                        Создана: {created || <span className="text-muted">--</span>}
-                      </div>
-                      <div>
-                        Обновлена: {updated || <span className="text-muted">--</span>}
-                      </div>
-                    </div>
-
-                    <hr className="my-2" />
-
-                    {/* Блок результатов ReadIndex вместо "кол-во текстов" */}
-                    <div className="mt-2">
-                      <div className="fw-semibold small mb-1">
-                        Результаты ReadIndex
-                      </div>
-
-                      {totalResults > 1 ? (
-                        <>
-                          <div className="small">
-                            Непустых результатов:{" "}
-                            <b>
-                              {nonEmptyCount}/{totalResults}
-                            </b>
-                          </div>
-                          {avgReadIndex !== null && (
-                            <div className="small">
-                              Средний индекс:{" "}
-                              <b>{avgReadIndex.toFixed(2)}</b>
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div className="small text-muted">
-                          Результатов пока нет
-                        </div>
+                {creatorsStats.map((c) => (
+                  <ListGroup.Item
+                    key={c.login}
+                    action
+                    active={selectedCreatorLogin === c.login}
+                    onClick={() => setSelectedCreatorLogin(c.login)}
+                    className="d-flex justify-content-between align-items-center"
+                  >
+                    <span>{c.login}</span>
+                    <div className="d-flex gap-2 align-items-center">
+                      {c.pending > 0 && (
+                        <ExclamationCircleFill
+                          className="text-danger blink-icon"
+                          title="Есть необработанные заявки"
+                        />
                       )}
+                      <Badge bg="light" text="dark" pill>
+                        {c.total}
+                      </Badge>
                     </div>
+                  </ListGroup.Item>
+                ))}
+              </ListGroup>
+            </Card>
+          </Col>
+        )}
 
-                    {/* {order.contacts && (
-                      <div className="mt-3 small text-muted">
-                        Контакты: {order.contacts}
-                      </div>
-                    )} */}
-                  </Card.Body>
-                </Card>
-              </Col>
-            );
-          })}
-        </Row>
-      ) : (
-        <div className="text-center py-4 text-muted">
-          Заявок нет
-        </div>
-      )}
+        {/* Правая колонка: фильтры + таблица */}
+        <Col lg={isModerator ? 9 : 12}>
+          <Card className="mb-4 border-0 shadow-sm bg-white">
+            <Card.Body>
+              <Row className="g-3 align-items-end">
+                <Col md={isModerator ? 3 : 4}>
+                  <Form.Label className="fw-bold small text-muted">
+                    Статус
+                  </Form.Label>
+                  <Form.Select
+                    name="status"
+                    value={apiFilters.status}
+                    onChange={handleApiFilterChange}
+                    size="sm"
+                  >
+                    <option value="all">Все статусы</option>
+                    <option value="FORMED">Сформирована</option>
+                    <option value="IN_PROGRESS">В работе</option>
+                    <option value="COMPLETED">Завершена</option>
+                    <option value="REJECTED">Отклонена</option>
+                    <option value="DRAFT">Черновик</option>
+                  </Form.Select>
+                </Col>
+
+                <Col md={isModerator ? 3 : 4}>
+                  <Form.Label className="fw-bold small text-muted">
+                    Дата формирования от
+                  </Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="date_from"
+                    value={apiFilters.date_from}
+                    onChange={handleApiFilterChange}
+                    size="sm"
+                  />
+                </Col>
+
+                <Col md={isModerator ? 3 : 4}>
+                  <Form.Label className="fw-bold small text-muted">
+                    Дата формирования до
+                  </Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="date_to"
+                    value={apiFilters.date_to}
+                    onChange={handleApiFilterChange}
+                    size="sm"
+                  />
+                </Col>
+
+                {isModerator && (
+                  <Col md={3} className="text-end">
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      onClick={() => {
+                        const params: any = {};
+                        if (apiFilters.status !== "all")
+                          params.status = normalizeStatus(apiFilters.status);
+                        if (apiFilters.date_from)
+                          params.date_from = apiFilters.date_from;
+                        if (apiFilters.date_to)
+                          params.date_to = apiFilters.date_to;
+                        dispatch(fetchReadIndxsList(params));
+                      }}
+                    >
+                      Обновить <Funnel />
+                    </Button>
+                  </Col>
+                )}
+              </Row>
+            </Card.Body>
+          </Card>
+
+          {loading && list.length === 0 ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="warning" />
+            </div>
+          ) : (
+            <div className="table-responsive shadow-sm rounded bg-white">
+              <Table hover className="align-middle mb-0">
+                <thead className="bg-light text-secondary">
+                  <tr>
+                    <th>ID</th>
+                    {isModerator && <th>Создатель</th>}
+                    <th>Статус</th>
+                    <th>Дата создания</th>
+                    <th>Дата формирования</th>
+                    <th>Готовые результаты</th>
+                    {isModerator && <th className="text-end">Действия</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayedList.length > 0 ? (
+                    displayedList.map((order: any) => {
+                      const calculations = Array.isArray(order.calculations)
+                        ? order.calculations
+                        : [];
+                      const total = calculations.length;
+                      const nonEmpty = calculations.filter(
+                        (v: any) => v !== 0 && v !== undefined
+                      ).length;
+
+                      const creatorLogin = extractCreatorLogin(order);
+
+                      return (
+                        <tr
+                          key={order.id}
+                          onClick={() => handleRowClick(order.id)}
+                          style={{ cursor: "pointer" }}
+                          className={
+                            isModerator && isModerationPending(order.status)
+                              ? "table-warning-soft"
+                              : ""
+                          }
+                        >
+                          <td className="fw-bold">#{order.id}</td>
+
+                          {isModerator && (
+                            <td className="small text-muted">
+                              {creatorLogin === "—"
+                                ? "—"
+                                : `Пользователь ${creatorLogin}`}
+                            </td>
+                          )}
+
+                          <td>{getStatusBadge(order.status)}</td>
+
+                          <td className="small">
+                            {order.date_create ? toDate(order.date_create) : "-"}
+                          </td>
+
+                          <td className="small">
+                            {order.date_form ? toDate(order.date_form) : "-"}
+                          </td>
+
+                          <td>
+                            {total > 0 ? (
+                              <span className="small">
+                                <b>{nonEmpty}</b>/{total}
+                              </span>
+                            ) : (
+                              <span className="text-muted small">0</span>
+                            )}
+                          </td>
+
+                          {isModerator && (
+                            <td className="text-end">
+                              {isModerationPending(order.status) ? (
+                                <div className="d-inline-flex gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline-danger"
+                                    onClick={(e) =>
+                                      handleModerate(e, order.id, "reject")
+                                    }
+                                    title="Отклонить"
+                                  >
+                                    <XCircleFill />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline-success"
+                                    onClick={(e) =>
+                                      handleModerate(e, order.id, "complete")
+                                    }
+                                    title="Принять"
+                                  >
+                                    <CheckLg />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <span className="text-muted small">—</span>
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={isModerator ? 7 : 6}
+                        className="text-center py-5 text-muted"
+                      >
+                        Заявок не найдено
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </Table>
+            </div>
+          )}
+        </Col>
+      </Row>
     </Container>
   );
 };

@@ -1,28 +1,27 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { api } from '../../api';
-import type { 
-    HandlerUserCredentials, 
-    ModelsAuthoResp, 
-    DsUser 
+import type {
+    HandlerUserCredentials,
+    ModelsAuthoResp,
+    DsUser
 } from '../../api/Api';
 
 // Тип состояния пользователя
 interface UserState {
-    user: DsUser | null;      
-    token: string | null;        
-    isAuthenticated: boolean;    
-    registerSuccess: boolean;   
-    loading: boolean;         
-    error: string | null;      
+    user: DsUser | null;
+    token: string | null;
+    isAuthenticated: boolean;
+    registerSuccess: boolean;
+    loading: boolean;
+    error: string | null;
 }
 
 const storedToken = localStorage.getItem('authToken');
-const storedUser = localStorage.getItem('userInfo');
 
 const initialState: UserState = {
-    user: storedUser ? JSON.parse(storedUser) : null,
+    user: null,                          // НЕ берём из localStorage
     token: storedToken || null,
-    isAuthenticated: false,
+    isAuthenticated: !!storedToken,      // если есть токен – попробуем подтянуть профиль
     registerSuccess: false,
     loading: false,
     error: null,
@@ -36,9 +35,14 @@ export const loginUser = createAsyncThunk(
             const response = await api.auth.loginCreate(credentials);
             const data = response.data;
             console.log('Login response data:', data);
-            if (data.data?.AccessToken) localStorage.setItem('authToken', data.data.AccessToken);
-            console.log('Login response data:', localStorage.getItem('authToken'));
+
+            if (data.data?.AccessToken) {
+                localStorage.setItem('authToken', data.data.AccessToken);
+            }
+
+            // Сразу же подгружаем профиль пользователя с сервера
             await dispatch(fetchUserProfile());
+
             return data;
         } catch (err: any) {
             const backendError = err.response?.data?.description || '';
@@ -62,8 +66,10 @@ export const registerUser = createAsyncThunk(
     async (credentials: HandlerUserCredentials, { dispatch, rejectWithValue }) => {
         try {
             const response = await api.users.registerCreate(credentials);
-            dispatch(fetchUserProfile());
-            return response.data; 
+            // После регистрации можем сразу подтянуть профиль (если бэкенд логинит автоматически)
+            // либо оставить только регистрацию – зависит от твоей API-логики
+            // await dispatch(fetchUserProfile());
+            return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data?.description || 'Ошибка регистрации');
         }
@@ -80,7 +86,6 @@ export const logoutUser = createAsyncThunk(
             console.warn('Logout failed on backend, clearing local anyway');
         } finally {
             localStorage.removeItem('authToken');
-            localStorage.removeItem('userInfo');
         }
     }
 );
@@ -91,8 +96,8 @@ export const fetchUserProfile = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await api.users.getUsers();
-            //localStorage.setItem('userInfo', JSON.stringify(response.data));
-            return response.data;
+            // ВАЖНО: ничего не кладём в localStorage, только в Redux
+            return response.data as DsUser;
         } catch (err: any) {
             return rejectWithValue('Не удалось загрузить профиль');
         }
@@ -102,19 +107,15 @@ export const fetchUserProfile = createAsyncThunk(
 // --- 5. ОБНОВЛЕНИЕ ПРОФИЛЯ ---
 export const updateUserProfile = createAsyncThunk(
     'user/updateProfile',
-    async ({id, data }: {id:number, data: HandlerUserCredentials }, { rejectWithValue }) => {
+    async ({ id, data }: { id: number; data: HandlerUserCredentials }, { rejectWithValue }) => {
         try {
-            await api.users.usersUpdate(id,data);
-            return {id, ...data }; 
+            await api.users.usersUpdate(id, data);
+            return { id, ...data };
         } catch (err: any) {
-            console.error(
-                "updateUserProfile error:",
-                err?.response?.data ?? err
-            );
-            const msg =
-                err?.response?.data?.description || "Ошибка обновления";
+            console.error('updateUserProfile error:', err?.response?.data ?? err);
+            const msg = err?.response?.data?.description || 'Ошибка обновления';
             return rejectWithValue(msg);
-            }
+        }
     }
 );
 
@@ -127,7 +128,7 @@ const userSlice = createSlice({
         },
         resetRegisterSuccess: (state) => {
             state.registerSuccess = false;
-        }
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -140,10 +141,12 @@ const userSlice = createSlice({
                 state.loading = false;
                 state.isAuthenticated = true;
                 state.token = action.payload.data?.AccessToken || null;
-                //state.user =  null; // TODO: rewrite
+                // Пользовательский объект заполняется только через fetchUserProfile
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false;
+                state.isAuthenticated = false;
+                state.token = null;
                 state.error = action.payload as string;
             })
 
@@ -155,7 +158,7 @@ const userSlice = createSlice({
             })
             .addCase(registerUser.fulfilled, (state) => {
                 state.loading = false;
-                state.registerSuccess = true; 
+                state.registerSuccess = true;
             })
             .addCase(registerUser.rejected, (state, action) => {
                 state.loading = false;
@@ -175,27 +178,43 @@ const userSlice = createSlice({
             })
 
             // === FETCH PROFILE ===
-            .addCase(fetchUserProfile.fulfilled, (state, action) => {
-                state.user = action.payload;
-                //localStorage.setItem("userInfo", JSON.stringify(action.payload));
+            .addCase(fetchUserProfile.pending, (state) => {
+                state.loading = true;
+                state.error = null;
             })
-            // в builder в extraReducers:
-
-            .addCase(updateUserProfile.fulfilled, (state, action) => {
-                if (state.user) {
-                    if (action.payload.login) state.user.login = action.payload.login;
-                }
-                //localStorage.setItem('userInfo', JSON.stringify(state.user));
-            });
-
+            .addCase(fetchUserProfile.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload;
+                console.log('Fetched user profile:', action.payload);
+                state.isAuthenticated = true; // профиль успешно подтянут – пользователь авторизован
+            })
+            .addCase(fetchUserProfile.rejected, (state, action) => {
+                state.loading = false;
+                state.user = null;
+                state.isAuthenticated = false;
+                state.error = action.payload as string;
+            })
 
             // === UPDATE PROFILE ===
-            // .addCase(updateUserProfile.fulfilled, (state, action) => {
-            //     if (state.user) {
-            //         if (action.payload.login) state.user.login = action.payload.login;
-            //     }
-            //     localStorage.setItem('userInfo', JSON.stringify(state.user));
-            // });
+            .addCase(updateUserProfile.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateUserProfile.fulfilled, (state, action) => {
+                state.loading = false;
+                if (state.user) {
+                    if (action.payload.login) {
+                        state.user.login = action.payload.login;
+                    }
+                    if (action.payload.password) {
+                        // обычно пароль в user не хранят, оставим без изменения
+                    }
+                }
+            })
+            .addCase(updateUserProfile.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            });
     },
 });
 
