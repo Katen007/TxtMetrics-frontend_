@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { api } from '../../api';
 import type {
     HandlerUserCredentials,
-    ModelsAuthoResp,
+    //ModelsAuthoResp,
     DsUser
 } from '../../api/Api';
 
@@ -68,7 +68,7 @@ export const registerUser = createAsyncThunk(
             const response = await api.users.registerCreate(credentials);
             // После регистрации можем сразу подтянуть профиль (если бэкенд логинит автоматически)
             // либо оставить только регистрацию – зависит от твоей API-логики
-            // await dispatch(fetchUserProfile());
+            await dispatch(fetchUserProfile());
             return response.data;
         } catch (err: any) {
             return rejectWithValue(err.response?.data?.description || 'Ошибка регистрации');
@@ -123,9 +123,9 @@ const userSlice = createSlice({
     name: 'user',
     initialState,
     reducers: {
-        clearError: (state) => {
-            state.error = null;
-        },
+        // clearError: (state) => {
+        //     state.error = null;
+        // },
         resetRegisterSuccess: (state) => {
             state.registerSuccess = false;
         },
@@ -218,5 +218,5 @@ const userSlice = createSlice({
     },
 });
 
-export const { clearError, resetRegisterSuccess } = userSlice.actions;
+export const { resetRegisterSuccess } = userSlice.actions;
 export default userSlice.reducer;

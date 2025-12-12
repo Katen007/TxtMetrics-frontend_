@@ -97,6 +97,7 @@ const extractCreatorLogin = (order: any): string => {
   return String(raw);
 };
 
+
 export const ReadIndexsListPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();

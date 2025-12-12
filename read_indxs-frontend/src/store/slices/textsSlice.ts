@@ -148,10 +148,7 @@ const textsSlice = createSlice({
     },
     clearCurrentText: (state) => {
       state.currentText = null;
-    },
-    clearError: (state) => {
-      state.error = null;
-    },
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -272,7 +269,6 @@ const textsSlice = createSlice({
 export const {
   resetOperationSuccess,
   clearCurrentText,
-  clearError,
 } = textsSlice.actions;
 
 export default textsSlice.reducer;

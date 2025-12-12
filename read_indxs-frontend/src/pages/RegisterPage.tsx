@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Card, Form, Button, Spinner, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { registerUser, clearError, resetRegisterSuccess } from '../store/slices/userSlice';
+import { registerUser, resetRegisterSuccess } from '../store/slices/userSlice';
 import { PersonPlus } from 'react-bootstrap-icons';
 import type { AppDispatch, RootState } from '../store';
 import './styles/main.css';
@@ -16,7 +16,7 @@ export const RegisterPage = () => {
     const { loading, error, registerSuccess } = useSelector((state: RootState) => state.user);
 
     useEffect(() => {
-        dispatch(clearError());
+        //dispatch(clearError());
         dispatch(resetRegisterSuccess());
     }, [dispatch]);
 

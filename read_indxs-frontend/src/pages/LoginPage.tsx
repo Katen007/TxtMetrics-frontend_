@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Container, Card, Form, Button, Spinner, Alert } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { loginUser, clearError } from "../store/slices/userSlice";
+import { loginUser } from "../store/slices/userSlice";
 import type { AppDispatch, RootState } from "../store";
 import { BoxArrowInRight } from "react-bootstrap-icons";
 import "./styles/main.css";
@@ -19,14 +19,13 @@ export const LoginPage = () => {
     if (isAuthenticated) {
       navigate("/texts");
     }
-    dispatch(clearError());
   }, [isAuthenticated, navigate, dispatch]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await dispatch(loginUser(formData));
-      navigate("/texts");
+      if (isAuthenticated) {navigate("/texts");}
     } catch (err) {
       console.error(err);
     }

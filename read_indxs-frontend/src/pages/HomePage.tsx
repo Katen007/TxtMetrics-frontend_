@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import './styles/ReadIndxsPage.css';
 //import { useNavigate } from 'react-router-dom';
 const slides = [
-  './public/background/pic1.jpg',
-  './public/background/pic2.jpg',
-  './public/background/pic3.jpg',
+  './background/pic1.jpg',
+  './background/pic2.jpg',
+  './background/pic3.jpg',
 ];
 
 export const HomePage = () => {

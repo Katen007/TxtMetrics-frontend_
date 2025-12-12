@@ -3,7 +3,7 @@ import { Api } from './Api';
 
 
 export const api = new Api({
-    baseURL: '/api',
+    baseURL: 'http://localhost:8080/api',
 });
 
 api.instance.interceptors.request.use((config) => {

@@ -24,6 +24,13 @@ type MetricsState = Record<
   }
 >;
 
+ const isChangeReadIndx = (status: string  | undefined) => {
+    if (status != "COMPLETED" && status != "REJECTED"){
+      return true;
+    } 
+    return false;
+ }
+
 export const ReadIndexsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useDispatch<AppDispatch>();
@@ -225,12 +232,15 @@ export const ReadIndexsPage: React.FC = () => {
               placeholder="Email / телефон"
             />
           </Form.Group>
-
-          <div className="mt-3 d-flex justify-content-end">
+          { isChangeReadIndx(current?.status) &&(
+            <div className="mt-3 d-flex justify-content-end">
             <Button variant="primary" onClick={handleSaveRequestFields}>
               Сохранить поля заявки
             </Button>
           </div>
+          )
+          }
+         
         </Form>
       </Card>
 
@@ -300,15 +310,17 @@ export const ReadIndexsPage: React.FC = () => {
                         Подробнее
                       </Button>
                     </Link>
-
-                    <Button
+                    { 
+                    isChangeReadIndx(current?.status) &&(
+                      <Button
                       variant="primary"
                       size="sm"
                       onClick={() => handleSaveMetricsForText(textId as number)}
                     >
                       Сохранить
                     </Button>
-
+                    )
+                    }
                     {isDraft && (
                       <Button
                         variant="danger"
