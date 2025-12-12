@@ -5,15 +5,15 @@ export const TEXTS_MOCK: IPaginatedTexts = {
   items: [
     {
         "id": 1,
-        "image_url": "https://www.hse.ru/data/2017/05/17/1171367341/3iStock-610454902.jpg",
-        "title": "Научная статья",
+        "image_url": "https://img.freepik.com/free-photo/close-up-pages-book_23-2147779276.jpg?semt=ais_incoming&w=740&q=80",
+        "title": "Научная статья1",
         "description": "Мы анализируем научные тексты: проверяем структуру, терминологическую насыщенность и вычисляем индексы читабельности (Флеша, Фога, SMOG). Отчёт покажет, насколько материал удобен для чтения и как его упростить.",
         "price": 125
     },
     {
         "id": 2,
-        "image_url": "http://localhost:9000/img/img/his.jpg",
-        "title": "Исторический документ",
+        "image_url": "https://img.freepik.com/free-photo/close-up-pages-book_23-2147779276.jpg?semt=ais_incoming&w=740&q=80",
+        "title": "Исторический текст",
         "description": "Подходит для архивных и исторических материалов. Оцениваем длину предложений, редкие конструкции и устаревшие формы, строим метрики читабельности и даём рекомендации по адаптации.",
         "price": 400
     },
@@ -27,21 +27,21 @@ export const TEXTS_MOCK: IPaginatedTexts = {
     {
         "id": 4,
         "image_url": "https://dist-fastdev.ngcdn.ru/directus/45f95763-419f-4db0-b016-d04908b4647a.png",
-        "title": "Курс 2",
+        "title": "Текст 2",
         "description": "Description1",
         "price": 101
     },
     {
         "id": 5,
         "image_url": "https://img.freepik.com/free-photo/close-up-hand-taking-notes_23-2148950524.jpg?semt=ais_hybrid\u0026w=740\u0026q=80",
-        "title": "Курс 3",
+        "title": "Текст 3",
         "description": "Description2",
         "price": 102
     },
     {
         "id": 6,
         "image_url": "https://www.hse.ru/data/2017/05/17/1171367341/3iStock-610454902.jpg",
-        "title": "Курс 4",
+        "title": "Текст 4",
         "description": "Description3",
         "price": 103
     },

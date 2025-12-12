@@ -10,6 +10,8 @@ import { RegisterPage } from './pages/RegisterPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ReadIndexsListPage } from './pages/ReadIndxsListPage';
 import { ReadIndexsPage } from './pages/ReadIndxsPage';
+import { useEffect } from 'react';
+import { invoke } from "@tauri-apps/api/core";
 
 const MainLayout = () => (
   <>
@@ -22,6 +24,17 @@ const MainLayout = () => (
 );
 
 function App() {
+   useEffect(()=>{
+        invoke('tauri', {cmd: 'create'})
+        .then((resp: any) => console.log(resp))
+        .catch((err: any) => console.log(err));
+        return ()=>{
+            invoke('tauri', {cmd: 'close'})
+        .then((resp: any) => console.log(resp))
+        .catch((err: any) => console.log(err));
+        }
+
+    }, [])
   return (
     <BrowserRouter>
       <Routes>
