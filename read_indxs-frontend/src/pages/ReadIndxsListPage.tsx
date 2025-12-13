@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Container,
-  Table,
   Form,
   Row,
   Col,
@@ -97,7 +96,6 @@ const extractCreatorLogin = (order: any): string => {
   return String(raw);
 };
 
-
 export const ReadIndexsListPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -184,7 +182,7 @@ export const ReadIndexsListPage = () => {
   }, [list, isModerator, selectedCreatorLogin]);
 
   const handleRowClick = (id?: number) => {
-    if (id) navigate(`/orders/${id}`);
+    if (id) navigate(`/readIndxs/${id}`);
   };
 
   const handleApiFilterChange = (
@@ -213,9 +211,9 @@ export const ReadIndexsListPage = () => {
         {isModerator && (
           <Col lg={3} className="mb-4">
             <Card className="shadow-sm border-0 h-100">
-              <Card.Header className="bg-warning text-dark fw-bold d-flex align-items-center gap-2">
-                <PersonFill /> Пользователи
-              </Card.Header>
+              <Card.Header className="bg-white border-0 fw-bold d-flex align-items-center gap-2 user-panel-title">
+        <PersonFill /> Пользователи
+      </Card.Header>
 
               <ListGroup variant="flush" className="user-filter-list">
                 <ListGroup.Item
@@ -257,7 +255,7 @@ export const ReadIndexsListPage = () => {
           </Col>
         )}
 
-        {/* Правая колонка: фильтры + таблица */}
+        {/* Правая колонка: фильтры + плитка заявок */}
         <Col lg={isModerator ? 9 : 12}>
           <Card className="mb-4 border-0 shadow-sm bg-white">
             <Card.Body>
@@ -336,77 +334,95 @@ export const ReadIndexsListPage = () => {
               <Spinner animation="border" variant="warning" />
             </div>
           ) : (
-            <div className="table-responsive shadow-sm rounded bg-white">
-              <Table hover className="align-middle mb-0">
-                <thead className="bg-light text-secondary">
-                  <tr>
-                    <th>ID</th>
-                    {isModerator && <th>Создатель</th>}
-                    <th>Статус</th>
-                    <th>Дата создания</th>
-                    <th>Дата формирования</th>
-                    <th>Готовые результаты</th>
-                    {isModerator && <th className="text-end">Действия</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {displayedList.length > 0 ? (
-                    displayedList.map((order: any) => {
-                      const calculations = Array.isArray(order.calculations)
-                        ? order.calculations
-                        : [];
-                      const total = calculations.length;
-                      const nonEmpty = calculations.filter(
-                        (v: any) => v !== 0 && v !== undefined
-                      ).length;
+            <>
+              <Row className="mb-3">
+                <Col>
+                  <div className="small text-muted">
+                    Найдено заявок:{" "}
+                    <strong>{displayedList.length}</strong>
+                  </div>
+                </Col>
+              </Row>
 
-                      const creatorLogin = extractCreatorLogin(order);
+              {displayedList.length === 0 ? (
+                <div className="text-center py-5 text-muted">
+                  Заявок не найдено
+                </div>
+              ) : (
+                <Row className="g-4">
+                  {displayedList.map((order: any) => {
+                    const calculations = Array.isArray(order.calculations)
+                      ? order.calculations
+                      : [];
+                    const total = calculations.length;
+                    const nonEmpty = calculations.filter(
+                      (v: any) => v !== 0 && v !== undefined
+                    ).length;
 
-                      return (
-                        <tr
-                          key={order.id}
+                    const creatorLogin = extractCreatorLogin(order);
+
+                    const cardHighlight =
+                      isModerator && isModerationPending(order.status)
+                        ? "table-warning-soft"
+                        : "";
+
+                    return (
+                      <Col key={order.id} md={6} lg={4}>
+                        <Card
+                          className={`h-100 shadow-sm border-0 ${cardHighlight}`}
                           onClick={() => handleRowClick(order.id)}
                           style={{ cursor: "pointer" }}
-                          className={
-                            isModerator && isModerationPending(order.status)
-                              ? "table-warning-soft"
-                              : ""
-                          }
                         >
-                          <td className="fw-bold">#{order.id}</td>
+                          <Card.Body>
+                            <div className="d-flex justify-content-between align-items-start mb-2">
+                              <div>
+                                <div className="fw-bold">
+                                  Заявка №{order.id}
+                                </div>
+                                {isModerator && (
+                                  <div className="small text-muted">
+                                    {creatorLogin === "—"
+                                      ? "—"
+                                      : `Пользователь ${creatorLogin}`}
+                                  </div>
+                                )}
+                              </div>
+                              {getStatusBadge(order.status)}
+                            </div>
+
+                            <div className="small text-muted mb-2">
+                              <div>
+                                Дата создания:{" "}
+                                {order.date_create
+                                  ? toDate(order.date_create)
+                                  : "-"}
+                              </div>
+                              <div>
+                                Дата формирования:{" "}
+                                {order.date_form
+                                  ? toDate(order.date_form)
+                                  : "-"}
+                              </div>
+                            </div>
+
+                            <hr />
+
+                            <div className="small">
+                              Готовые результаты:{" "}
+                              {total > 0 ? (
+                                <strong>
+                                  {nonEmpty}/{total}
+                                </strong>
+                              ) : (
+                                <span className="text-muted">0</span>
+                              )}
+                            </div>
+                          </Card.Body>
 
                           {isModerator && (
-                            <td className="small text-muted">
-                              {creatorLogin === "—"
-                                ? "—"
-                                : `Пользователь ${creatorLogin}`}
-                            </td>
-                          )}
-
-                          <td>{getStatusBadge(order.status)}</td>
-
-                          <td className="small">
-                            {order.date_create ? toDate(order.date_create) : "-"}
-                          </td>
-
-                          <td className="small">
-                            {order.date_form ? toDate(order.date_form) : "-"}
-                          </td>
-
-                          <td>
-                            {total > 0 ? (
-                              <span className="small">
-                                <b>{nonEmpty}</b>/{total}
-                              </span>
-                            ) : (
-                              <span className="text-muted small">0</span>
-                            )}
-                          </td>
-
-                          {isModerator && (
-                            <td className="text-end">
+                            <Card.Footer className="bg-transparent border-0 pt-0 pb-3 px-3">
                               {isModerationPending(order.status) ? (
-                                <div className="d-inline-flex gap-2">
+                                <div className="d-flex justify-content-end gap-2">
                                   <Button
                                     size="sm"
                                     variant="outline-danger"
@@ -429,26 +445,20 @@ export const ReadIndexsListPage = () => {
                                   </Button>
                                 </div>
                               ) : (
-                                <span className="text-muted small">—</span>
+                                <span className="text-muted small">
+                                  {/* как и в таблице: просто тире */}
+                                  
+                                </span>
                               )}
-                            </td>
+                            </Card.Footer>
                           )}
-                        </tr>
-                      );
-                    })
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={isModerator ? 7 : 6}
-                        className="text-center py-5 text-muted"
-                      >
-                        Заявок не найдено
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </Table>
-            </div>
+                        </Card>
+                      </Col>
+                    );
+                  })}
+                </Row>
+              )}
+            </>
           )}
         </Col>
       </Row>

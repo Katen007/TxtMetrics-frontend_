@@ -43,8 +43,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/texts" element={<TextsListPage />} />
           <Route path="/texts/:id" element={<TextDetailPage />} />
-          <Route path="/orders" element={<ReadIndexsListPage />} />
-          <Route path="/orders/:id" element={<ReadIndexsPage />} />
+          <Route path="/readIndxs" element={<ReadIndexsListPage />} />
+          <Route path="/readIndxs/:id" element={<ReadIndexsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
 

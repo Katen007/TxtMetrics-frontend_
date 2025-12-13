@@ -45,7 +45,7 @@ export const TextsListPage = () => {
 
   const handleOpenDraft = () => {
     if (!readIndxs_id) return;
-    navigate(`/orders/${readIndxs_id}`);
+    navigate(`/readIndxs/${readIndxs_id}`);
   };
 
   const hasDraft = !!readIndxs_id;

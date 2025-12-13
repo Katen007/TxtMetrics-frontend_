@@ -49,7 +49,7 @@ export const AppNavbar = () => {
           </Nav.Link>
 
           {isAuthenticated && (
-            <Nav.Link as={Link} to="/orders">
+            <Nav.Link as={Link} to="/readIndxs">
               Мои заявки
             </Nav.Link>
           )}

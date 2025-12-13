@@ -157,13 +157,13 @@ export const ReadIndexsPage: React.FC = () => {
   }
   setLocalError(null);
   await dispatch(formReadIndxs(current.id));
-  navigate("/orders");
+  navigate("/readIndxs");
 };
 
   const handleDeleteRequest = async () => {
     if (!current?.id) return;
     await dispatch(deleteReadIndxs(current.id));
-    navigate("/orders");
+    navigate("/readIndxs");
   };
 
   // Сохранение полей заявки (комментарий, контакты) по кнопке
