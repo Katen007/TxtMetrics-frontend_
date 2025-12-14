@@ -12,6 +12,9 @@ import { ReadIndexsListPage } from './pages/ReadIndxsListPage';
 import { ReadIndexsPage } from './pages/ReadIndxsPage';
 import { useEffect } from 'react';
 import { invoke } from "@tauri-apps/api/core";
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from './store';
+import { resetAuth } from './store/slices/userSlice';
 
 const MainLayout = () => (
   <>
@@ -24,6 +27,18 @@ const MainLayout = () => (
 );
 
 function App() {
+  const dispatch = useDispatch<AppDispatch>();
+
+  // 1) ВЫХОД ПРИ ОБНОВЛЕНИИ (reload)
+  useEffect(() => {
+    const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+
+    if (nav?.type === 'reload') {
+      dispatch(resetAuth());              // сброс Redux user-state
+      localStorage.removeItem('token');   // если вы храните токен в localStorage (поменяйте ключ при необходимости)
+    }
+  }, [dispatch]);
+
    useEffect(()=>{
         invoke('tauri', {cmd: 'create'})
         .then((resp: any) => console.log(resp))

@@ -2,11 +2,11 @@
 import { Link } from 'react-router-dom';
 import './styles/ReadIndxsPage.css';
 //import { useNavigate } from 'react-router-dom';
-const slides = [
-  './background/pic1.jpg',
-  './background/pic2.jpg',
-  './background/pic3.jpg',
-];
+import pic1 from '../assets/background/pic1.jpg';
+import pic2 from '../assets/background/pic2.jpg';
+import pic3 from '../assets/background/pic3.jpg';
+
+const slides = [pic1, pic2, pic3];
 
 export const HomePage = () => {
   return (

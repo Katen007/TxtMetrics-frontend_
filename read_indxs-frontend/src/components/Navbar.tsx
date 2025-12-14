@@ -1,6 +1,6 @@
 // src/components/Navbar.tsx
 import { useEffect } from 'react';
-import { Navbar, Container, Nav, Button, Badge } from 'react-bootstrap';
+import { Navbar, Container, Nav, Button/*, Badge*/ } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { PersonCircle, BoxArrowRight } from 'react-bootstrap-icons';
@@ -13,10 +13,13 @@ export const AppNavbar = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
-  const { isAuthenticated, user, loading } = useSelector((state: RootState) => state.user);
+  const { isAuthenticated, user, loading } = useSelector(
+    (state: RootState) => state.user
+  );
   // const { readIndxs_id, count } = useSelector((state: RootState) => state.cart);
 
-  // Подтягиваем бейджик корзины, когда пользователь залогинен
+  // Логика как у друга: просто подтягиваем бейдж корзины, если юзер залогинен.
+  // НИКАКОГО logout в useEffect — это и ломало вход.
   useEffect(() => {
     if (isAuthenticated) {
       dispatch(fetchCartBadge());
@@ -25,21 +28,22 @@ export const AppNavbar = () => {
 
   const handleLogout = async () => {
     try {
+      // как у друга: сначала выходим
       await dispatch(logoutUser());
+      // затем обновляем бейдж (он станет пустым/нулевым)
+      dispatch(fetchCartBadge());
     } catch (e) {
       console.warn(e);
     } finally {
-      // после выхода — на страницу логина
+      // и уводим на логин
       navigate('/login');
     }
   };
-
- 
-
+const showUserBlock = isAuthenticated && !!user?.login;
   return (
     <Navbar fixed="top" className="app-header" bg="" variant="dark">
       <Container fluid className="app-header__inner">
-        <Navbar.Brand as={Link} to="/texts" className="brand">
+        <Navbar.Brand as={Link} to="/" className="brand">
           TxtMetric
         </Navbar.Brand>
 
@@ -56,64 +60,37 @@ export const AppNavbar = () => {
         </Nav>
 
         <Nav className="ms-auto align-items-center gap-2">
-          {/* Кнопка перехода к черновику заявки по заданию */}
-          {/* {isAuthenticated && (
-            <Button
-              as={Link}
-              to={readIndxs_id ? `/orders/${readIndxs_id}` : '#'}
-              variant={readIndxs_id ? 'outline-light' : 'outline-light'}
-              size="sm"
-              disabled={!readIndxs_id}
-              style={{
-                opacity: readIndxs_id ? 1 : 0.5,
-                cursor: readIndxs_id ? 'pointer' : 'not-allowed',
-              }}
-            >
-              Черновик&nbsp;
-              <Badge bg="light" text="dark">
-                {count}
-              </Badge>
-            </Button>
-          )} */}
+          
+          {showUserBlock ? (
+  <>
+    <Nav.Link
+      as={Link}
+      to="/profile"
+      className="text-white d-flex align-items-center gap-2"
+    >
+      <PersonCircle size={20} />
+      <span className="fw-bold">{user!.login}</span>
+    </Nav.Link>
 
-          {isAuthenticated ? (
-            <>
-              <Nav.Link as={Link} to="/profile" className="text-white d-flex align-items-center gap-2">
-                    <PersonCircle size={20} />
-                    <span className="fw-bold">
-                        {user?.login|| 'Пользователь'}
-                    </span>
-              </Nav.Link>
-              <Button
-                variant="outline-light"
-                size="sm"
-                onClick={handleLogout}
-                disabled={loading}
-              >
-                Выйти
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="outline-light"
-                size="sm"
-                as={Link}
-                to="/login"
-              >
-                Вход
-              </Button>
-              <Button
-                size="sm"
-                as={Link}
-                to="/register"
-                className="btn-orange"
-                >
-                Регистрация
-                </Button>
-
-            </>
-          )}
+    <Button
+      variant="outline-light"
+      size="sm"
+      onClick={handleLogout}
+      disabled={loading}
+    >
+      Выйти
+    </Button>
+  </>
+) : (
+  <>
+    <Button variant="outline-light" size="sm" as={Link} to="/login">
+      Вход
+    </Button>
+    <Button size="sm" as={Link} to="/register" className="btn-orange">
+      Регистрация
+    </Button>
+  </>
+)}
         </Nav>
       </Container>
     </Navbar>

@@ -129,6 +129,14 @@ const userSlice = createSlice({
         resetRegisterSuccess: (state) => {
             state.registerSuccess = false;
         },
+        resetAuth: (state) => {
+            state.isAuthenticated = false;
+            state.user = null;          // или {} — как у вас в initialState
+            state.loading = false;
+            state.error = null;         // если есть поле error
+      // state.registerSuccess = false; // опционально, если хотите
+    },
+        
     },
     extraReducers: (builder) => {
         builder
@@ -217,6 +225,6 @@ const userSlice = createSlice({
             });
     },
 });
-
-export const { resetRegisterSuccess } = userSlice.actions;
+export const { resetRegisterSuccess, resetAuth } = userSlice.actions;
+//export const { resetRegisterSuccess } = userSlice.actions;
 export default userSlice.reducer;

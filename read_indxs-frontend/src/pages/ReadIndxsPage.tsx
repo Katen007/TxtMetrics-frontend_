@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { Button, Spinner, Card, Form, Image, Container, Row, Col, Alert } from "react-bootstrap";
+import {
+  Button,
+  Spinner,
+  Card,
+  Form,
+  Image,
+  Container,
+  Row,
+  Col,
+  Alert,
+} from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "../store";
 import {
@@ -10,8 +20,15 @@ import {
   removeTextFromReadIndxs,
   updateTextMetrics,
   updateReadIndxs,
+  moderateReadIndxs, // ← добавлено
 } from "../store/slices/readIndxsSlice";
-import type { HandlerMmBody, HandlerMmBodyDelete, DsReadIndxsToText, DsText } from "../api/Api";
+import type {
+  HandlerMmBody,
+  HandlerMmBodyDelete,
+  DsReadIndxsToText,
+  DsText,
+} from "../api/Api";
+import { XCircleFill, CheckLg } from "react-bootstrap-icons"; // ← добавлено
 
 import "./styles/OrderPage.css";
 
@@ -24,19 +41,21 @@ type MetricsState = Record<
   }
 >;
 
- const isChangeReadIndx = (status: string  | undefined) => {
-    if (status != "COMPLETED" && status != "REJECTED"){
-      return true;
-    } 
-    return false;
- }
+const isChangeReadIndx = (status: string | undefined) => {
+  if (status != "COMPLETED" && status != "REJECTED") {
+    return true;
+  }
+  return false;
+};
 
 export const ReadIndexsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
-  const { current, loading, error } = useSelector((state: RootState) => state.readIndxs);
+  const { current, loading, error } = useSelector(
+    (state: RootState) => state.readIndxs
+  );
   const { user } = useSelector((state: RootState) => state.user);
 
   const isDraft = current?.status === "DRAFT";
@@ -46,6 +65,11 @@ export const ReadIndexsPage: React.FC = () => {
   const [commenst, setCommenst] = useState<string>("");
   const [contacts, setContacts] = useState<string>("");
   const [localError, setLocalError] = useState<string | null>(null);
+
+  // модератор и статус для модерации
+  const isModerator = !!user?.is_moderator;
+  const isModerationPending =
+    current?.status === "FORMED" || current?.status === "IN_PROGRESS";
 
   useEffect(() => {
     if (!id) return;
@@ -69,7 +93,9 @@ export const ReadIndexsPage: React.FC = () => {
             ? String(t.count_sentences)
             : "",
         words:
-          t.count_words !== undefined && t.count_words !== null ? String(t.count_words) : "",
+          t.count_words !== undefined && t.count_words !== null
+            ? String(t.count_words)
+            : "",
         syllables:
           t.count_syllables !== undefined && t.count_syllables !== null
             ? String(t.count_syllables)
@@ -86,10 +112,12 @@ export const ReadIndexsPage: React.FC = () => {
   ) => {
     setMetrics((prev) => ({
       ...prev,
-      [textId]: { ...(prev[textId] || { sentences: "", words: "", syllables: "" }), [field]: value },
+      [textId]: {
+        ...(prev[textId] || { sentences: "", words: "", syllables: "" }),
+        [field]: value,
+      },
     }));
   };
-
 
   // Сохранение метрик для одного текста (по кнопке)
   const handleSaveMetricsForText = async (textId: number) => {
@@ -149,16 +177,22 @@ export const ReadIndexsPage: React.FC = () => {
   };
 
   const handleFormReadIndxs = async () => {
-  if (!current?.id) return;
+    if (!current?.id) return;
 
-  if (contacts.trim().length==0 || commenst.trim().length == 0 || texts.length === 0) {
-    setLocalError("Для отправки заявки укажите контакты и добавьте хотя бы один текст.");
-    return;
-  }
-  setLocalError(null);
-  await dispatch(formReadIndxs(current.id));
-  navigate("/readIndxs");
-};
+    if (
+      contacts.trim().length == 0 ||
+      commenst.trim().length == 0 ||
+      texts.length === 0
+    ) {
+      setLocalError(
+        "Для отправки заявки укажите контакты и добавьте хотя бы один текст."
+      );
+      return;
+    }
+    setLocalError(null);
+    await dispatch(formReadIndxs(current.id));
+    navigate("/readIndxs");
+  };
 
   const handleDeleteRequest = async () => {
     if (!current?.id) return;
@@ -170,7 +204,9 @@ export const ReadIndexsPage: React.FC = () => {
   const handleSaveRequestFields = async () => {
     if (!current?.id) return;
     if (commenst.trim().length == 0 || contacts.trim().length == 0) {
-      setLocalError("Заполните хотя бы одно из полей: комментарий или контакты.");
+      setLocalError(
+        "Заполните хотя бы одно из полей: комментарий или контакты."
+      );
       return;
     }
     await dispatch(
@@ -183,6 +219,20 @@ export const ReadIndexsPage: React.FC = () => {
       })
     );
   };
+
+  // --- действия модератора ---
+   const handleApprove = () => {
+    if (!current?.id) return;
+    // без confirm — просто отправляем действие
+    dispatch(moderateReadIndxs({ id: current.id, action: "complete" }));
+  };
+
+  const handleReject = () => {
+    if (!current?.id) return;
+    // без confirm — просто отправляем действие
+    dispatch(moderateReadIndxs({ id: current.id, action: "reject" }));
+  };
+  // --- конец действий модератора ---
 
   if (loading || !current) {
     return (
@@ -199,16 +249,15 @@ export const ReadIndexsPage: React.FC = () => {
         <p>
           Статус: <b>{current.status}</b>
         </p>
-
       </div>
       {(localError || error) && (
-      <Alert variant="danger">
-        {localError ||
-          (error === "contacts and at least one text are required"
-            ? "Для отправки заявки необходимо указать контакты и добавить хотя бы один текст."
-            : error)}
-      </Alert>
-    )}
+        <Alert variant="danger">
+          {localError ||
+            (error === "contacts and at least one text are required"
+              ? "Для отправки заявки необходимо указать контакты и добавить хотя бы один текст."
+              : error)}
+        </Alert>
+      )}
 
       <Card className="mb-4 p-3">
         <Form>
@@ -232,15 +281,13 @@ export const ReadIndexsPage: React.FC = () => {
               placeholder="Email / телефон"
             />
           </Form.Group>
-          { isChangeReadIndx(current?.status) &&(
+          {isChangeReadIndx(current?.status) && (
             <div className="mt-3 d-flex justify-content-end">
-            <Button variant="primary" onClick={handleSaveRequestFields}>
-              Сохранить поля заявки
-            </Button>
-          </div>
-          )
-          }
-         
+              <Button variant="primary" onClick={handleSaveRequestFields}>
+                Сохранить поля заявки
+              </Button>
+            </div>
+          )}
         </Form>
       </Card>
 
@@ -249,7 +296,12 @@ export const ReadIndexsPage: React.FC = () => {
           {texts.map((t, i) => {
             const textId = t.data?.id ?? i;
             const textData: DsText | undefined = t.data;
-            const m = metrics[textId] || { sentences: "", words: "", syllables: "" };
+            const m =
+              metrics[textId] || {
+                sentences: "",
+                words: "",
+                syllables: "",
+              };
 
             return (
               <Card key={textId} className="order-text-card mb-3 shadow-sm">
@@ -266,7 +318,11 @@ export const ReadIndexsPage: React.FC = () => {
                     <div className="order-text-fields d-flex flex-wrap gap-3 mt-2">
                       <div className="d-flex flex-column">
                         <label>Индекс читаемости:</label>
-                        <Form.Control readOnly value={t.calculation ?? ""} style={{ width: 100 }} />
+                        <Form.Control
+                          readOnly
+                          value={t.calculation ?? ""}
+                          style={{ width: 100 }}
+                        />
                       </div>
 
                       <div className="d-flex flex-column">
@@ -275,7 +331,11 @@ export const ReadIndexsPage: React.FC = () => {
                           value={m.sentences}
                           style={{ width: 100 }}
                           onChange={(e) =>
-                            handleMetricChange(textId as number, "sentences", e.target.value)
+                            handleMetricChange(
+                              textId as number,
+                              "sentences",
+                              e.target.value
+                            )
                           }
                         />
                       </div>
@@ -286,7 +346,11 @@ export const ReadIndexsPage: React.FC = () => {
                           value={m.words}
                           style={{ width: 100 }}
                           onChange={(e) =>
-                            handleMetricChange(textId as number, "words", e.target.value)
+                            handleMetricChange(
+                              textId as number,
+                              "words",
+                              e.target.value
+                            )
                           }
                         />
                       </div>
@@ -297,7 +361,11 @@ export const ReadIndexsPage: React.FC = () => {
                           value={m.syllables}
                           style={{ width: 100 }}
                           onChange={(e) =>
-                            handleMetricChange(textId as number, "syllables", e.target.value)
+                            handleMetricChange(
+                              textId as number,
+                              "syllables",
+                              e.target.value
+                            )
                           }
                         />
                       </div>
@@ -310,17 +378,17 @@ export const ReadIndexsPage: React.FC = () => {
                         Подробнее
                       </Button>
                     </Link>
-                    { 
-                    isChangeReadIndx(current?.status) &&(
+                    {isChangeReadIndx(current?.status) && (
                       <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handleSaveMetricsForText(textId as number)}
-                    >
-                      Сохранить
-                    </Button>
-                    )
-                    }
+                        variant="primary"
+                        size="sm"
+                        onClick={() =>
+                          handleSaveMetricsForText(textId as number)
+                        }
+                      >
+                        Сохранить
+                      </Button>
+                    )}
                     {isDraft && (
                       <Button
                         variant="danger"
@@ -336,6 +404,7 @@ export const ReadIndexsPage: React.FC = () => {
             );
           })}
 
+          {/* Сохранить все услуги — оставляю закомментированным, как у тебя */}
           {/* <Row className="mt-3">
             <Col xs={12} className="d-flex justify-content-end">
               <Button
@@ -359,11 +428,40 @@ export const ReadIndexsPage: React.FC = () => {
           </Button>
         </Col>
         <Col xs={12} md={6} className="text-end">
-          <Button variant="success" onClick={handleFormReadIndxs} disabled={!isDraft}>
+          <Button
+            variant="success"
+            onClick={handleFormReadIndxs}
+            disabled={!isDraft}
+          >
             Отправить заявку
           </Button>
         </Col>
       </Row>
+
+      {/* --- блок действий модератора --- */}
+            {/* --- блок действий модератора --- */}
+      {isModerator && isModerationPending && (
+        <Card className="mt-4 border-warning shadow">
+          <Card.Header className="bg-warning text-dark fw-bold">
+            Действия модератора
+          </Card.Header>
+          <Card.Body className="d-flex justify-content-end gap-3">
+            <Button
+              variant="outline-warning"
+              size="lg"
+              onClick={handleReject}
+            >
+              <XCircleFill className="me-2" /> Отклонить
+            </Button>
+            <Button variant="primary" size="lg" onClick={handleApprove}>
+              <CheckLg className="me-2" /> Принять
+            </Button>
+          </Card.Body>
+        </Card>
+      )}
+      {/* --- конец блока модератора --- */}
+
+      {/* --- конец блока модератора --- */}
     </Container>
   );
 };
