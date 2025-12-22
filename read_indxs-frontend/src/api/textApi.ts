@@ -1,7 +1,7 @@
 import type { CartIcon, IPaginatedTexts, IText } from '../types';
 import { TEXTS_MOCK, CART_MOCK } from './mock';
 
-const API_PREFIX = '/api';
+const API_PREFIX = 'http://localhost:8080/api';
 
 // Получение списка текстов с фильтраией по названию
 export const getTexts = async (title: string): Promise<IPaginatedTexts> => {
