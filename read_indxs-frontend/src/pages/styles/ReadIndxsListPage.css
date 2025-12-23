@@ -16,3 +16,116 @@
   max-height: 70vh;
   overflow-y: auto;
 }
+/* Ограничиваем ширину правой части (фильтры + карточки), чтобы карточки были "поуже" */
+.ri-content {
+  max-width: 980px;        /* подгони при желании: 900–1100 */
+  margin: 0 auto;
+}
+
+/* Карточка */
+.ri-card {
+  border-radius: 12px;
+}
+
+/* Отступы внутри карточки — более компактно и ровно */
+.ri-card-body {
+  padding: 16px 18px;
+}
+
+@media (min-width: 768px) {
+  .ri-card-body {
+    padding: 18px 22px;
+  }
+}
+
+/* Верхняя строка: заголовок слева, бейдж справа */
+.ri-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.ri-title {
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+/* Сетка 4 колонки, как на макете */
+.ri-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* На узких экранах — 2 колонки, чтобы не ломалось */
+@media (max-width: 767.98px) {
+  .ri-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Ячейка */
+.ri-cell {
+  min-width: 0; /* чтобы тексты переносились корректно */
+}
+
+/* Лейблы: одинаковая высота/вид, чтобы было "поровнее" */
+.ri-label {
+  font-size: 12px;
+  color: #6c757d; /* bootstrap text-muted */
+  font-weight: 600;
+  line-height: 1.2;
+  min-height: 16px; /* фиксируем высоту строки лейбла */
+  margin-bottom: 6px;
+}
+
+/* Значения: единая высота строки */
+.ri-value {
+  font-size: 14px;
+  color: #212529;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Низ: слева создатель, справа "Открыть" */
+.ri-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.ri-muted {
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.ri-foot-strong {
+  color: #212529;
+  font-weight: 600;
+}
+
+.ri-open {
+  color: #0d6efd; /* bootstrap primary */
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Если используешь подсветку */
+.table-warning-soft {
+  background: rgba(255, 193, 7, 0.12);
+}
+
+/* Опционально: чтобы карточка выглядела как кликабельная */
+.ri-card:hover {
+  transform: translateY(-1px);
+  transition: transform 120ms ease;
+}
+

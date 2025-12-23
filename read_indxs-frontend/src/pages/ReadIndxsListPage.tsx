@@ -69,10 +69,30 @@ const getStatusBadge = (status?: string) => {
   }
 };
 
+const statusTextRu = (status?: string) => {
+  const s = normalizeStatus(status);
+  switch (s) {
+    case STATUS.COMPLETED:
+      return "Завершена";
+    case STATUS.FORMED:
+      return "Сформирована";
+    case STATUS.IN_PROGRESS:
+      return "В работе";
+    case STATUS.REJECTED:
+      return "Отклонена";
+    case STATUS.DRAFT:
+      return "Черновик";
+    case STATUS.DELETED:
+      return "Удалена";
+    default:
+      return "—";
+  }
+};
+
 const toDate = (value?: string) => {
-  if (!value) return "-";
+  if (!value) return "—";
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return "-";
+  if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("ru-RU");
 };
 
@@ -87,10 +107,11 @@ const formatDateInput = (date: Date) => {
 // создатель – логин (строка)
 const extractCreatorLogin = (order: any): string => {
   const raw =
-    order?.creator_login ?? // основной вариант
-    order?.creator ?? // запасной
-    order?.user_login ?? // если бэк назвал иначе
-    order?.user ?? null;
+    order?.creator_login ??
+    order?.creator ??
+    order?.user_login ??
+    order?.user ??
+    null;
 
   if (!raw) return "—";
   return String(raw);
@@ -105,7 +126,6 @@ export const ReadIndexsListPage = () => {
 
   const isModerator = !!user?.is_moderator;
 
-  // API-фильтры (бэкенд) — по умолчанию date_to = сегодня
   const [apiFilters, setApiFilters] = useState(() => {
     const todayStr = formatDateInput(new Date());
     const fromdayStr = formatDateInput(
@@ -114,11 +134,10 @@ export const ReadIndexsListPage = () => {
     return {
       status: "all",
       date_from: fromdayStr,
-      date_to: todayStr, // <- сегодняшняя дата по умолчанию
+      date_to: todayStr,
     };
   });
 
-  // Фильтр по создателю (логин, фронт, только модератор)
   const [selectedCreatorLogin, setSelectedCreatorLogin] = useState<
     string | "all"
   >("all");
@@ -143,7 +162,6 @@ export const ReadIndexsListPage = () => {
     return () => clearInterval(intervalId);
   }, [dispatch, apiFilters]);
 
-  // --- Список пользователей для панели модератора (по логину) ---
   const creatorsStats = useMemo(() => {
     if (!isModerator) return [];
 
@@ -151,11 +169,9 @@ export const ReadIndexsListPage = () => {
 
     (list || []).forEach((order: any) => {
       const login = extractCreatorLogin(order);
-      if (login === "—") return; // заявки без логина не учитываем
+      if (login === "—") return;
 
-      if (!stats.has(login)) {
-        stats.set(login, { total: 0, pending: 0 });
-      }
+      if (!stats.has(login)) stats.set(login, { total: 0, pending: 0 });
 
       const s = stats.get(login)!;
       s.total += 1;
@@ -169,11 +185,9 @@ export const ReadIndexsListPage = () => {
     }));
   }, [list, isModerator]);
 
-  // --- Фронт-фильтрация по логину создателя ---
   const displayedList = useMemo(() => {
     if (!list) return [];
     if (!isModerator) return list;
-
     if (selectedCreatorLogin === "all") return list;
 
     return list.filter(
@@ -201,19 +215,18 @@ export const ReadIndexsListPage = () => {
   };
 
   return (
-    <Container fluid className="pt-5 mt-5 px-4">
+    <Container fluid className="pt-5 mt-5 px-3 px-md-4">
       <h2 className="fw-bold mb-4 text-center text-secondary">
         {isModerator ? "Панель модератора" : "История заявок"}
       </h2>
 
-      <Row>
-        {/* Левая колонка модератора: пользователи */}
+      <Row className="justify-content-center">
         {isModerator && (
           <Col lg={3} className="mb-4">
             <Card className="shadow-sm border-0 h-100">
               <Card.Header className="bg-white border-0 fw-bold d-flex align-items-center gap-2 user-panel-title">
-        <PersonFill /> Пользователи
-      </Card.Header>
+                <PersonFill /> Пользователи
+              </Card.Header>
 
               <ListGroup variant="flush" className="user-filter-list">
                 <ListGroup.Item
@@ -255,172 +268,186 @@ export const ReadIndexsListPage = () => {
           </Col>
         )}
 
-        {/* Правая колонка: фильтры + плитка заявок */}
         <Col lg={isModerator ? 9 : 12}>
-          <Card className="mb-4 border-0 shadow-sm bg-white">
-            <Card.Body>
-              <Row className="g-3 align-items-end">
-                <Col md={isModerator ? 3 : 4}>
-                  <Form.Label className="fw-bold small text-muted">
-                    Статус
-                  </Form.Label>
-                  <Form.Select
-                    name="status"
-                    value={apiFilters.status}
-                    onChange={handleApiFilterChange}
-                    size="sm"
-                  >
-                    <option value="all">Все статусы</option>
-                    <option value="FORMED">Сформирована</option>
-                    <option value="IN_PROGRESS">В работе</option>
-                    <option value="COMPLETED">Завершена</option>
-                    <option value="REJECTED">Отклонена</option>
-                    <option value="DRAFT">Черновик</option>
-                  </Form.Select>
-                </Col>
-
-                <Col md={isModerator ? 3 : 4}>
-                  <Form.Label className="fw-bold small text-muted">
-                    Дата формирования от
-                  </Form.Label>
-                  <Form.Control
-                    type="date"
-                    name="date_from"
-                    value={apiFilters.date_from}
-                    onChange={handleApiFilterChange}
-                    size="sm"
-                  />
-                </Col>
-
-                <Col md={isModerator ? 3 : 4}>
-                  <Form.Label className="fw-bold small text-muted">
-                    Дата формирования до
-                  </Form.Label>
-                  <Form.Control
-                    type="date"
-                    name="date_to"
-                    value={apiFilters.date_to}
-                    onChange={handleApiFilterChange}
-                    size="sm"
-                  />
-                </Col>
-
-                {isModerator && (
-                  <Col md={3} className="text-end">
-                    <Button
-                      variant="outline-secondary"
+          {/* ограничиваем ширину контента (как на фото 2) */}
+          <div className="ri-content">
+            <Card className="mb-3 border-0 shadow-sm bg-white">
+              <Card.Body>
+                <Row className="g-3 align-items-end">
+                  <Col md={isModerator ? 3 : 4}>
+                    <Form.Label className="fw-bold small text-muted">
+                      Статус
+                    </Form.Label>
+                    <Form.Select
+                      name="status"
+                      value={apiFilters.status}
+                      onChange={handleApiFilterChange}
                       size="sm"
-                      onClick={() => {
-                        const params: any = {};
-                        if (apiFilters.status !== "all")
-                          params.status = normalizeStatus(apiFilters.status);
-                        if (apiFilters.date_from)
-                          params.date_from = apiFilters.date_from;
-                        if (apiFilters.date_to)
-                          params.date_to = apiFilters.date_to;
-                        dispatch(fetchReadIndxsList(params));
-                      }}
                     >
-                      Обновить <Funnel />
-                    </Button>
+                      <option value="all">Все статусы</option>
+                      <option value="FORMED">Сформирована</option>
+                      <option value="IN_PROGRESS">В работе</option>
+                      <option value="COMPLETED">Завершена</option>
+                      <option value="REJECTED">Отклонена</option>
+                      <option value="DRAFT">Черновик</option>
+                    </Form.Select>
                   </Col>
-                )}
-              </Row>
-            </Card.Body>
-          </Card>
 
-          {loading && list.length === 0 ? (
-            <div className="text-center py-5">
-              <Spinner animation="border" variant="warning" />
-            </div>
-          ) : (
-            <>
-              <Row className="mb-3">
-                <Col>
-                  <div className="small text-muted">
-                    Найдено заявок:{" "}
-                    <strong>{displayedList.length}</strong>
+                  <Col md={isModerator ? 3 : 4}>
+                    <Form.Label className="fw-bold small text-muted">
+                      Дата формирования от
+                    </Form.Label>
+                    <Form.Control
+                      type="date"
+                      name="date_from"
+                      value={apiFilters.date_from}
+                      onChange={handleApiFilterChange}
+                      size="sm"
+                    />
+                  </Col>
+
+                  <Col md={isModerator ? 3 : 4}>
+                    <Form.Label className="fw-bold small text-muted">
+                      Дата формирования до
+                    </Form.Label>
+                    <Form.Control
+                      type="date"
+                      name="date_to"
+                      value={apiFilters.date_to}
+                      onChange={handleApiFilterChange}
+                      size="sm"
+                    />
+                  </Col>
+
+                  {isModerator && (
+                    <Col md={3} className="text-end">
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={() => {
+                          const params: any = {};
+                          if (apiFilters.status !== "all")
+                            params.status = normalizeStatus(apiFilters.status);
+                          if (apiFilters.date_from)
+                            params.date_from = apiFilters.date_from;
+                          if (apiFilters.date_to)
+                            params.date_to = apiFilters.date_to;
+                          dispatch(fetchReadIndxsList(params));
+                        }}
+                      >
+                        Обновить <Funnel />
+                      </Button>
+                    </Col>
+                  )}
+                </Row>
+              </Card.Body>
+            </Card>
+
+            {loading && list.length === 0 ? (
+              <div className="text-center py-5">
+                <Spinner animation="border" variant="warning" />
+              </div>
+            ) : (
+              <>
+                <Row className="mb-2">
+                  <Col>
+                    <div className="small text-muted">
+                      Найдено заявок: <strong>{displayedList.length}</strong>
+                    </div>
+                  </Col>
+                </Row>
+
+                {displayedList.length === 0 ? (
+                  <div className="text-center py-5 text-muted">
+                    Заявок не найдено
                   </div>
-                </Col>
-              </Row>
+                ) : (
+                  <div className="d-flex flex-column gap-3">
+                    {displayedList.map((order: any) => {
+                      const calculations = Array.isArray(order.calculations)
+                        ? order.calculations
+                        : [];
+                      const total = calculations.length;
+                      const nonEmpty = calculations.filter(
+                        (v: any) => v !== 0 && v !== undefined
+                      ).length;
 
-              {displayedList.length === 0 ? (
-                <div className="text-center py-5 text-muted">
-                  Заявок не найдено
-                </div>
-              ) : (
-                <Row className="g-4">
-                  {displayedList.map((order: any) => {
-                    const calculations = Array.isArray(order.calculations)
-                      ? order.calculations
-                      : [];
-                    const total = calculations.length;
-                    const nonEmpty = calculations.filter(
-                      (v: any) => v !== 0 && v !== undefined
-                    ).length;
+                      const creatorLogin = extractCreatorLogin(order);
 
-                    const creatorLogin = extractCreatorLogin(order);
+                      const cardHighlight =
+                        isModerator && isModerationPending(order.status)
+                          ? "table-warning-soft"
+                          : "";
 
-                    const cardHighlight =
-                      isModerator && isModerationPending(order.status)
-                        ? "table-warning-soft"
-                        : "";
-
-                    return (
-                      <Col key={order.id} md={6} lg={4}>
+                      return (
                         <Card
-                          className={`h-100 shadow-sm border-0 ${cardHighlight}`}
-                          onClick={() => handleRowClick(order.id)}
+                          key={order.id}
+                          className={`shadow-sm border-0 ri-card ${cardHighlight}`}
                           style={{ cursor: "pointer" }}
+                          onClick={() => handleRowClick(order.id)}
                         >
-                          <Card.Body>
-                            <div className="d-flex justify-content-between align-items-start mb-2">
-                              <div>
-                                <div className="fw-bold">
-                                  Заявка №{order.id}
+                          <Card.Body className="ri-card-body">
+                            {/* верхняя строка */}
+                            <div className="ri-head">
+                              <div className="ri-title">Заявка №{order.id}</div>
+                              <div className="ri-badge">
+                                {getStatusBadge(order.status)}
+                              </div>
+                            </div>
+
+                            {/* ровная сетка (как на фото 2) */}
+                            <div className="ri-grid">
+                              <div className="ri-cell">
+                                <div className="ri-label">Статус</div>
+                                <div className="ri-value">
+                                  {statusTextRu(order.status)}
                                 </div>
+                              </div>
+
+                              <div className="ri-cell">
+                                <div className="ri-label">Дата создания</div>
+                                <div className="ri-value">
+                                  {toDate(order.date_create)}
+                                </div>
+                              </div>
+
+                              <div className="ri-cell">
+                                <div className="ri-label">
+                                  Дата формирования
+                                </div>
+                                <div className="ri-value">
+                                  {toDate(order.date_form)}
+                                </div>
+                              </div>
+
+                              <div className="ri-cell">
+                                <div className="ri-label">
+                                  Готовые результаты
+                                </div>
+                                <div className="ri-value">
+                                  {total > 0 ? `${nonEmpty}/${total}` : "0"}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* нижняя строка (создатель + открыть) */}
+                            <div className="ri-foot">
+                              <div className="ri-foot-left">
                                 {isModerator && (
-                                  <div className="small text-muted">
-                                    {creatorLogin === "—"
-                                      ? "—"
-                                      : `Пользователь ${creatorLogin}`}
-                                  </div>
+                                  <span className="ri-muted">
+                                    Создатель:{" "}
+                                    <span className="ri-foot-strong">
+                                      {creatorLogin}
+                                    </span>
+                                  </span>
                                 )}
                               </div>
-                              {getStatusBadge(order.status)}
-                            </div>
-
-                            <div className="small text-muted mb-2">
-                              <div>
-                                Дата создания:{" "}
-                                {order.date_create
-                                  ? toDate(order.date_create)
-                                  : "-"}
-                              </div>
-                              <div>
-                                Дата формирования:{" "}
-                                {order.date_form
-                                  ? toDate(order.date_form)
-                                  : "-"}
-                              </div>
-                            </div>
-
-                            <hr />
-
-                            <div className="small">
-                              Готовые результаты:{" "}
-                              {total > 0 ? (
-                                <strong>
-                                  {nonEmpty}/{total}
-                                </strong>
-                              ) : (
-                                <span className="text-muted">0</span>
-                              )}
+                              <div className="ri-open">Открыть</div>
                             </div>
                           </Card.Body>
 
                           {isModerator && (
-                            <Card.Footer className="bg-transparent border-0 pt-0 pb-3 px-3">
+                            <Card.Footer className="bg-transparent border-0 pt-0 pb-3 px-3 px-md-4">
                               {isModerationPending(order.status) ? (
                                 <div className="d-flex justify-content-end gap-2">
                                   <Button
@@ -445,21 +472,18 @@ export const ReadIndexsListPage = () => {
                                   </Button>
                                 </div>
                               ) : (
-                                <span className="text-muted small">
-                                  {/* как и в таблице: просто тире */}
-                                  
-                                </span>
+                                <span className="text-muted small" />
                               )}
                             </Card.Footer>
                           )}
                         </Card>
-                      </Col>
-                    );
-                  })}
-                </Row>
-              )}
-            </>
-          )}
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </Col>
       </Row>
     </Container>
